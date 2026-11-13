@@ -1,0 +1,10 @@
+﻿PROJECT_NAME           = "Smart Bookshelf IoT Firmware"
+PROJECT_BRIEF          = "ESP32 Firmware for RFID Identification, FSR Weight Sensing, and WS2812B LED Localization"
+OUTPUT_DIRECTORY       = docs/doxygen
+INPUT                  = firmware/src firmware/include
+FILE_PATTERNS          = *.cpp *.h
+RECURSIVE              = YES
+EXTRACT_ALL            = YES
+GENERATE_HTML          = YES
+GENERATE_LATEX         = NO
+HTML_OUTPUT            = html

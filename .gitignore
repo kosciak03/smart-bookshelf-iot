@@ -1,0 +1,20 @@
+﻿# Dependencies & build outputs
+node_modules/
+dist/
+build/
+.pio/
+.vite/
+
+# Environment & secrets
+.env
+.env.local
+
+# Doxygen generated output
+docs/doxygen/html/
+docs/doxygen/latex/
+
+# OS & IDE
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/extensions.json
