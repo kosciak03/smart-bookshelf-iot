@@ -1,4 +1,4 @@
-﻿generator client {
+generator client {
   provider = "prisma-client-js"
 }
 
@@ -40,16 +40,16 @@ model Book {
 }
 
 model ShelfSlot {
-  id           String       @id @default(uuid())
-  shelfNumber  Int
-  slotNumber   Int
-  ledStartIdx  Int
-  ledEndIdx    Int
-  fsrPin       Int
-  isOccupied   Boolean      @default(false)
-  isHighlighted Boolean     @default(false)
-  book         Book?
-  events       ShelfEvent[]
+  id            String       @id @default(uuid())
+  shelfNumber   Int
+  slotNumber    Int
+  ledStartIdx   Int
+  ledEndIdx     Int
+  fsrPin        Int
+  isOccupied    Boolean      @default(false)
+  isHighlighted Boolean      @default(false)
+  book          Book?
+  events        ShelfEvent[]
 
   @@unique([shelfNumber, slotNumber])
 }
