@@ -7,15 +7,24 @@
   "main": "dist/index.js",
   "scripts": {
     "dev": "tsx watch --clear-screen=false src/index.ts",
+    "dev:docker": "prisma generate && prisma migrate deploy && npm run dev",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/index.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "prisma:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "prisma db seed",
+    "db:reset": "prisma migrate reset",
+    "db:studio": "prisma studio --port 5555 --hostname 0.0.0.0 --browser none",
     "test": "echo \"No tests yet\" && exit 0"
   },
   "license": "MIT",
   "engines": {
     "node": ">=24"
+  },
+  "prisma": {
+    "seed": "tsx src/db/seed.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",

@@ -16,7 +16,8 @@ RUN npx prisma generate
 COPY . .
 
 ENV NODE_ENV=development
-EXPOSE 3000
+# 3000 = API, 5555 = Prisma Studio (started on demand with `npm run db:studio`).
+EXPOSE 3000 5555
 
-# Regenerate the Prisma Client on start so schema changes are picked up without a rebuild.
-CMD ["sh", "-c", "npx prisma generate && npm run dev"]
+# On start: regenerate the Prisma Client, apply pending migrations, run the dev server.
+CMD ["npm", "run", "dev:docker"]

@@ -38,6 +38,7 @@ services:
       CHOKIDAR_USEPOLLING: "true"
     ports:
       - "3000:3000"
+      - "5555:5555" # Prisma Studio: docker compose exec backend npm run db:studio
     volumes:
       - ./backend:/app
       - /app/node_modules # keep Linux node_modules from the image, not the host's

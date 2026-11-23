@@ -1,3 +1,8 @@
+// Smart Bookshelf IoT — database schema (Prisma 5.22, PostgreSQL 16).
+//
+// Integrity rules that Prisma cannot express (CHECK constraints such as
+// rating 1–5 or FSR channel 0–4) are added manually in the migration SQL.
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,59 +12,117 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+/// Reading status of a book in the user's library.
 enum BookStatus {
   WANT_TO_READ
   READING
   READ
 }
 
+/// Physical location state of a book on the smart shelf.
 enum LocationStatus {
+  /// The book has no shelf slot assigned.
   UNASSIGNED
+  /// The book is standing in its assigned slot (FSR reports pressure).
   ON_SHELF
-  CHECKED_OUT
+  /// The book has an assigned slot but was taken off the shelf.
+  OFF_SHELF
 }
 
+/// Kind of event reported by the shelf device or triggered by the user.
+enum ShelfEventType {
+  /// FSR detected that an item was placed in a slot.
+  BOOK_PLACED
+  /// FSR detected that an item was removed from a slot.
+  BOOK_REMOVED
+  /// An RFID tag was read by the MFRC522 reader (bookId is null for unknown tags).
+  RFID_SCANNED
+  /// A book was placed in a slot other than its assigned one.
+  MISPLACED
+  /// LEDs of a slot were switched on to locate a book.
+  HIGHLIGHT_ON
+  /// LEDs of a slot were switched off (manually or after a timeout).
+  HIGHLIGHT_OFF
+}
+
+/// A book in the user's catalogue.
 model Book {
   id             String         @id @default(uuid())
-  isbn           String?        @unique
+  /// Normalized ISBN-13 (digits only).
+  isbn           String?        @unique @db.VarChar(13)
   title          String
+  /// Display string; multiple authors are comma-separated (as returned by ISBN APIs).
   author         String
   description    String?
   coverUrl       String?
+  publisher      String?
+  publishedYear  Int?           @db.SmallInt
+  /// Free-form labels (genres, collections); stored as a PostgreSQL text[] column.
+  tags           String[]       @default([])
   pageCount      Int?
+  /// Reading progress; 0 <= pagesRead <= pageCount (CHECK constraint).
   pagesRead      Int            @default(0)
-  rating         Int?
+  /// User rating 1–5 (CHECK constraint); null when not rated.
+  rating         Int?           @db.SmallInt
   status         BookStatus     @default(WANT_TO_READ)
+  /// Set when reading starts (status becomes READING).
+  startedAt      DateTime?
+  /// Set when reading is finished (status becomes READ).
+  finishedAt     DateTime?
   locationStatus LocationStatus @default(UNASSIGNED)
-  rfidUid        String?        @unique
+  /// Hex UID of the RFID sticker (4, 7 or 10 bytes → up to 20 characters).
+  rfidUid        String?        @unique @db.VarChar(20)
+  /// Assigned shelf slot; one slot holds at most one book.
   slotId         String?        @unique
-  slot           ShelfSlot?     @relation(fields: [slotId], references: [id])
+  slot           ShelfSlot?     @relation(fields: [slotId], references: [id], onDelete: SetNull)
   events         ShelfEvent[]
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
+
+  @@index([status])
+  @@index([locationStatus])
 }
 
+/// A physical slot of the shelf: one FSR sensor and a contiguous range of LEDs.
 model ShelfSlot {
   id            String       @id @default(uuid())
-  shelfNumber   Int
-  slotNumber    Int
-  ledStartIdx   Int
-  ledEndIdx     Int
-  fsrPin        Int
+  /// Shelf (device) number; a single ESP32 shelf is number 1.
+  shelfNumber   Int          @default(1) @db.SmallInt
+  /// Position of the slot on the shelf, counted from the left starting at 1.
+  slotNumber    Int          @db.SmallInt
+  /// Index of the first WS2812B LED of this slot (inclusive, 0-based).
+  ledStartIdx   Int          @db.SmallInt
+  /// Index of the last WS2812B LED of this slot (inclusive, >= ledStartIdx).
+  ledEndIdx     Int          @db.SmallInt
+  /// Logical FSR channel 0–4; the firmware maps it to GPIO 34, 35, 32, 33, 36.
+  fsrChannel    Int          @db.SmallInt
+  /// Last state reported by the FSR sensor.
   isOccupied    Boolean      @default(false)
+  /// Whether the slot LEDs are currently lit.
   isHighlighted Boolean      @default(false)
   book          Book?
   events        ShelfEvent[]
+  updatedAt     DateTime     @updatedAt
 
   @@unique([shelfNumber, slotNumber])
+  @@unique([shelfNumber, fsrChannel])
 }
 
+/// Append-only log of shelf activity (sensor readings and user actions).
 model ShelfEvent {
-  id        String     @id @default(uuid())
-  type      String
+  id        String         @id @default(uuid())
+  type      ShelfEventType
   bookId    String?
-  book      Book?      @relation(fields: [bookId], references: [id])
+  book      Book?          @relation(fields: [bookId], references: [id], onDelete: SetNull)
   slotId    String?
-  slot      ShelfSlot? @relation(fields: [slotId], references: [id])
-  createdAt DateTime   @default(now())
+  slot      ShelfSlot?     @relation(fields: [slotId], references: [id], onDelete: SetNull)
+  /// Raw RFID UID for RFID_SCANNED events (kept even when the tag is unknown).
+  rfidUid   String?        @db.VarChar(20)
+  /// Additional device data, e.g. raw FSR ADC reading.
+  payload   Json?
+  createdAt DateTime       @default(now())
+
+  @@index([createdAt])
+  @@index([bookId])
+  @@index([slotId])
 }
