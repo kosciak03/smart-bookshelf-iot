@@ -4,6 +4,9 @@
 
 @baseUrl = http://localhost:3000/api
 
+### API entry point (name, version, endpoint list)
+GET {{baseUrl}}
+
 ### Health check
 GET {{baseUrl}}/health
 
