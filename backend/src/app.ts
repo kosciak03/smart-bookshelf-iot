@@ -6,8 +6,10 @@
  * instantiated in integration tests without binding to a TCP port.
  */
 import cors from "cors";
-import express, { type Express, type NextFunction, type Request, type Response } from "express";
+import express, { type Express } from "express";
 import { env } from "./config/env.js";
+import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
+import { booksRouter } from "./modules/books/book.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
 
 /**
@@ -23,17 +25,11 @@ export function createApp(): Express {
   app.use(express.json({ limit: "1mb" }));
 
   app.use("/api", healthRouter);
+  app.use("/api/books", booksRouter);
 
-  // Unknown API routes.
-  app.use((_req: Request, res: Response) => {
-    res.status(404).json({ error: "Not Found" });
-  });
-
-  // Centralized error handler (Express 5 forwards rejected promises here).
-  app.use((error: unknown, _req: Request, res: Response, _next: NextFunction) => {
-    console.error("[app] Unhandled error:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  });
+  app.use(notFoundHandler);
+  // Express 5 forwards rejected promises from async handlers to this middleware.
+  app.use(errorHandler);
 
   return app;
 }

@@ -1,0 +1,5 @@
+{
+  // Production build: same settings as tsconfig.json, without tests.
+  "extends": "./tsconfig.json",
+  "exclude": ["node_modules", "dist", "src/**/*.test.ts", "src/test/**"]
+}

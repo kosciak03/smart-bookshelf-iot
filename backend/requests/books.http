@@ -1,0 +1,112 @@
+# Smart Bookshelf API — example requests for the VS Code "REST Client" extension
+# (humao.rest-client). Click "Send Request" above a request to run it.
+# Requires the stack to be running: docker compose up
+
+@baseUrl = http://localhost:3000/api
+
+### Health check
+GET {{baseUrl}}/health
+
+### List books (default: page 1, 20 per page, newest first)
+GET {{baseUrl}}/books
+
+### List books — sorted by rating (unrated last), 3 per page, page 2
+GET {{baseUrl}}/books?sort=rating&order=desc&pageSize=3&page=2
+
+### List books — sorted by title A→Z
+GET {{baseUrl}}/books?sort=title&order=asc
+
+### Create a book (ISBN with hyphens is normalized to ISBN-13)
+# @name createBook
+POST {{baseUrl}}/books
+Content-Type: application/json
+
+{
+  "title": "Solaris",
+  "author": "Stanisław Lem",
+  "isbn": "978-0-15-602760-1",
+  "publisher": "Harcourt",
+  "publishedYear": 2002,
+  "pageCount": 204,
+  "tags": ["Fiction", "Science Fiction"],
+  "status": "WANT_TO_READ"
+}
+
+### Get the book created above
+@bookId = {{createBook.response.body.data.id}}
+GET {{baseUrl}}/books/{{bookId}}
+
+### Update reading progress and rating
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "status": "READING",
+  "pagesRead": 50,
+  "startedAt": "2026-11-23"
+}
+
+### Clear a nullable field (null removes the value)
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "publisher": null
+}
+
+### Delete the book (204 No Content)
+DELETE {{baseUrl}}/books/{{bookId}}
+
+# ---------------------------------------------------------------------------
+# Error cases
+# ---------------------------------------------------------------------------
+
+### 400 — validation error (missing title, invalid ISBN checksum, rating out of range)
+POST {{baseUrl}}/books
+Content-Type: application/json
+
+{
+  "author": "Unknown",
+  "isbn": "9780132350885",
+  "rating": 6
+}
+
+### 400 — read-only shelf field (managed by the shelf module)
+POST {{baseUrl}}/books
+Content-Type: application/json
+
+{
+  "title": "Test",
+  "author": "Test",
+  "rfidUid": "04A1B2C3"
+}
+
+### 400 — pagesRead greater than pageCount
+POST {{baseUrl}}/books
+Content-Type: application/json
+
+{
+  "title": "Test",
+  "author": "Test",
+  "pageCount": 100,
+  "pagesRead": 150
+}
+
+### 409 — duplicate ISBN (Clean Code from the seed, given as ISBN-10)
+POST {{baseUrl}}/books
+Content-Type: application/json
+
+{
+  "title": "Clean Code (duplicate)",
+  "author": "Robert C. Martin",
+  "isbn": "0-13-235088-2"
+}
+
+### 400 — invalid query parameter
+GET {{baseUrl}}/books?pageSize=500
+
+### 400 — malformed id
+GET {{baseUrl}}/books/not-a-uuid
+
+### 404 — unknown id
+GET {{baseUrl}}/books/00000000-0000-4000-8000-000000000000

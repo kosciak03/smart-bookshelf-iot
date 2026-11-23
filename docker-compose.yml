@@ -20,6 +20,29 @@ services:
       retries: 10
       start_period: 10s
 
+  # Dedicated, throw-away database for integration tests (npm test).
+  # Data lives in RAM (tmpfs) and durability is disabled for speed; it is never
+  # shared with the development database above.
+  postgres-test:
+    image: postgres:16-alpine
+    container_name: smart-bookshelf-db-test
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: bookshelf_test
+      POSTGRES_PASSWORD: bookshelf_test
+      POSTGRES_DB: smart_bookshelf_test
+    command: ["postgres", "-c", "fsync=off", "-c", "synchronous_commit=off", "-c", "full_page_writes=off"]
+    ports:
+      - "5433:5432"
+    tmpfs:
+      - /var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
   backend:
     build:
       context: ./backend
@@ -34,6 +57,8 @@ services:
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-bookshelf_admin}:${POSTGRES_PASSWORD:-bookshelf_secret_password}@postgres:5432/${POSTGRES_DB:-smart_bookshelf}?schema=public
       CORS_ORIGIN: http://localhost:5173
+      # Used by `npm test` inside the container (see src/test/test-database.ts).
+      TEST_DATABASE_URL: postgresql://bookshelf_test:bookshelf_test@postgres-test:5432/smart_bookshelf_test?schema=public
       # Bind mounts from Windows/macOS do not emit inotify events, so watch by polling.
       CHOKIDAR_USEPOLLING: "true"
     ports:
