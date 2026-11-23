@@ -1,4 +1,4 @@
-﻿# Smart Bookshelf IoT System
+# Smart Bookshelf IoT System
 
 **Design and Implementation of a Smart Bookshelf with Book Identification and Location System**  
 *B.Sc. Engineering Thesis Project — Silesian University of Technology (Faculty of Automatic Control, Electronics and Computer Science)*

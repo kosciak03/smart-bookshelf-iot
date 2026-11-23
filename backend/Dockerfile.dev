@@ -1,0 +1,22 @@
+# Development image for the Smart Bookshelf API (hot reload via tsx watch).
+# Source code is bind-mounted by docker-compose; dependencies live in the image.
+FROM node:26-alpine
+
+# Prisma query engine requires OpenSSL on Alpine (linux-musl-openssl-3.0.x).
+RUN apk add --no-cache openssl
+
+WORKDIR /app
+
+COPY package.json package-lock.json ./
+RUN npm ci
+
+COPY prisma ./prisma
+RUN npx prisma generate
+
+COPY . .
+
+ENV NODE_ENV=development
+EXPOSE 3000
+
+# Regenerate the Prisma Client on start so schema changes are picked up without a rebuild.
+CMD ["sh", "-c", "npx prisma generate && npm run dev"]

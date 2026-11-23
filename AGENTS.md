@@ -1,4 +1,4 @@
-﻿# Project: Smart Bookshelf IoT System
+# Project: Smart Bookshelf IoT System
 
 ## General Rules
 1. **Language:** All code, variable names, comments, commit messages, and documentation in this repository MUST be written in **English**.

@@ -1,4 +1,4 @@
-﻿# AI Tools Usage Log (Rejestr wykorzystania narzędzi AI - Wydział AEiI PŚ)
+# AI Tools Usage Log (Rejestr wykorzystania narzędzi AI - Wydział AEiI PŚ)
 
 Zgodnie z Zarządzeniem nr 5/2026 Rektora Politechniki Śląskiej z dnia 15 stycznia 2026 r. (§ 4 pkt 6 oraz pkt 9) oraz wytycznymi Wydziału AEiI, poniższy rejestr dokumentuje zakres wykorzystania narzędzi AI w trakcie realizacji projektu oraz redakcji pracy inżynierskiej.
 
