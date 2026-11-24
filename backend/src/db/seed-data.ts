@@ -8,10 +8,20 @@
 import type { BookStatus, LocationStatus } from "@prisma/client";
 
 /**
- * Number of WS2812B LEDs assigned to each slot.
- * Adjust to the physical strip once the final shelf width is known.
+ * Physical LED layout of the prototype strip (11 × WS2812B):
+ *
+ * ```
+ * index:  0     1     2     3     4     5     6     7     8     9     10
+ *        WALL  SLOT1 WALL  SLOT2 WALL  SLOT3 WALL  SLOT4 WALL  SLOT5 WALL
+ * ```
+ *
+ * Wall LEDs (even indexes) are static white separators; each slot has exactly
+ * one LED (odd index `2n - 1` for slot `n`) whose colour reflects the slot state.
  */
-export const LEDS_PER_SLOT = 8;
+export const TOTAL_LEDS = 11;
+
+/** Indexes of the white separator ("wall") LEDs. */
+export const WALL_LED_INDEXES: readonly number[] = [0, 2, 4, 6, 8, 10];
 
 /** Definition of a shelf slot to be seeded. */
 export interface SeedSlot {
@@ -23,13 +33,13 @@ export interface SeedSlot {
 
 /**
  * Five slots of shelf 1. FSR channel `n` is wired to FSR_(n+1)
- * (GPIO 34, 35, 32, 33, 36 — see AGENTS.md).
+ * (GPIO 34, 35, 32, 33, 36 — see AGENTS.md); slot `n` uses LED `2n - 1`.
  */
 export const SEED_SLOTS: readonly SeedSlot[] = Array.from({ length: 5 }, (_, index) => ({
   slotNumber: index + 1,
   fsrChannel: index,
-  ledStartIdx: index * LEDS_PER_SLOT,
-  ledEndIdx: index * LEDS_PER_SLOT + LEDS_PER_SLOT - 1,
+  ledStartIdx: 2 * index + 1,
+  ledEndIdx: 2 * index + 1,
 }));
 
 /** Definition of a book to be seeded. */

@@ -8,6 +8,8 @@
 
 ## Hardware Pinout (ESP32-DevKitC - Custom PCB)
 - **LED Strip (WS2812B via 3.3V->5V level shifter + 330R resistor):** `GPIO 13`
+  - 11 LEDs: `WALL | SLOT1 | WALL | SLOT2 | WALL | SLOT3 | WALL | SLOT4 | WALL | SLOT5 | WALL`
+  - Wall LEDs (indexes `0, 2, 4, 6, 8, 10`) are static white; slot `n` uses LED index `2n - 1` (state colour).
 - **RFID Reader (MFRC522 over SPI):**
   - `SDA (CS)`: `GPIO 5`
   - `SCK`: `GPIO 18`
