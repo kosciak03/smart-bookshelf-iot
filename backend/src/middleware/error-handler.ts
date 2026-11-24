@@ -10,6 +10,7 @@
  * | Malformed JSON body                  | 400    | `INVALID_JSON`      |
  * | Body larger than the limit           | 413    | `PAYLOAD_TOO_LARGE` |
  * | Prisma P2002 (unique, `isbn`)        | 409    | `ISBN_CONFLICT`     |
+ * | Prisma P2002 (unique, `slotId`)      | 409    | `SLOT_CONFLICT`     |
  * | Prisma P2002 (unique, other field)   | 409    | `CONFLICT`          |
  * | Prisma P2025 (record not found)      | 404    | `NOT_FOUND`         |
  * | Anything else                        | 500    | `INTERNAL_ERROR`    |
@@ -94,6 +95,8 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, nex
       const fields = Array.isArray(target) ? target : [target];
       if (fields.includes("isbn")) {
         sendError(res, 409, "ISBN_CONFLICT", "A book with this ISBN already exists");
+      } else if (fields.includes("slotId")) {
+        sendError(res, 409, "SLOT_CONFLICT", "This shelf slot is already assigned to another book");
       } else {
         sendError(res, 409, "CONFLICT", `Unique constraint violated on: ${fields.join(", ")}`);
       }

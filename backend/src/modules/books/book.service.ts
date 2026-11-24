@@ -14,7 +14,7 @@ import {
 } from "./book.schemas.js";
 
 /** Relations included in every book returned by the API. */
-const bookInclude = {
+export const bookInclude = {
   slot: { select: { id: true, shelfNumber: true, slotNumber: true } },
 } satisfies Prisma.BookInclude;
 

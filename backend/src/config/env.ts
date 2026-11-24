@@ -23,6 +23,23 @@ const envSchema = z.object({
   DATABASE_URL: z.url({ protocol: /^postgres(ql)?$/ }),
   /** Comma-separated list of origins allowed by CORS. */
   CORS_ORIGIN: z.string().default("http://localhost:5173"),
+  /**
+   * Optional Google Books API key. Without it requests share a global anonymous
+   * quota that is often exhausted (HTTP 429), so Open Library is used instead.
+   */
+  GOOGLE_BOOKS_API_KEY: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : undefined)),
+  /** Timeout of a single request to an external metadata source (ms). */
+  ISBN_LOOKUP_TIMEOUT_MS: z.coerce.number().int().positive().default(5000),
+  /** How long found ISBN metadata stays cached in memory (seconds). */
+  ISBN_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(86_400),
+  /** How long a "not found" result stays cached in memory (seconds). */
+  ISBN_NEGATIVE_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(600),
+  /** Maximum number of cached ISBN lookups. */
+  ISBN_CACHE_MAX_ENTRIES: z.coerce.number().int().positive().default(500),
 });
 
 /** Strongly typed, validated application configuration. */

@@ -7,6 +7,7 @@
  * | GET    | `/`    | 200     | `{ data: Book[], meta: PageMeta }` |
  * | GET    | `/:id` | 200     | `{ data: Book }`                   |
  * | POST   | `/`    | 201     | `{ data: Book }` + `Location`      |
+ * | POST   | `/import` | 201  | `{ data: Book, meta: { source, cached } }` |
  * | PATCH  | `/:id` | 200     | `{ data: Book }`                   |
  * | DELETE | `/:id` | 204     | —                                  |
  *
@@ -14,7 +15,14 @@
  */
 import { Router } from "express";
 import { parseRequest } from "../../lib/validate.js";
-import { bookIdParamsSchema, createBookSchema, listBooksQuerySchema, updateBookSchema } from "./book.schemas.js";
+import { importBook } from "./book-import.service.js";
+import {
+  bookIdParamsSchema,
+  createBookSchema,
+  importBookSchema,
+  listBooksQuerySchema,
+  updateBookSchema,
+} from "./book.schemas.js";
 import { createBook, deleteBook, getBook, listBooks, updateBook } from "./book.service.js";
 
 /** Router for `/api/books`. */
@@ -34,6 +42,12 @@ booksRouter.post("/", async (req, res) => {
   const input = parseRequest(createBookSchema, req.body, "body");
   const book = await createBook(input);
   res.status(201).location(`${req.baseUrl}/${book.id}`).json({ data: book });
+});
+
+booksRouter.post("/import", async (req, res) => {
+  const input = parseRequest(importBookSchema, req.body, "body");
+  const { book, source, cached } = await importBook(input, req.body as Record<string, unknown>);
+  res.status(201).location(`${req.baseUrl}/${book.id}`).json({ data: book, meta: { source, cached } });
 });
 
 booksRouter.patch("/:id", async (req, res) => {

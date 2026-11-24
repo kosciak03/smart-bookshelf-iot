@@ -1,0 +1,89 @@
+# Smart Bookshelf API — ISBN lookup and import (VS Code "REST Client" extension).
+# These requests call real external APIs (Google Books, then Open Library).
+# Without GOOGLE_BOOKS_API_KEY Google often answers 429, so data comes from Open Library.
+
+@baseUrl = http://localhost:3000/api
+
+# ---------------------------------------------------------------------------
+# Lookup only (nothing is saved)
+# ---------------------------------------------------------------------------
+
+### Look up by ISBN-13 (hyphens allowed)
+GET {{baseUrl}}/isbn/978-0-13-235088-4
+
+### Same book by ISBN-10 — normalized to ISBN-13, second call is served from cache (meta.cached = true)
+GET {{baseUrl}}/isbn/0-13-235088-2
+
+### Polish edition ("Ostatnie życzenie", Andrzej Sapkowski)
+GET {{baseUrl}}/isbn/9788375780635
+
+### 400 — invalid checksum
+GET {{baseUrl}}/isbn/978-0-13-235088-5
+
+### 404 — valid ISBN unknown to every source
+GET {{baseUrl}}/isbn/9790000000001
+
+# ---------------------------------------------------------------------------
+# Import (lookup + save as a new book)
+# ---------------------------------------------------------------------------
+
+### Import with fetched data only
+# @name importBook
+POST {{baseUrl}}/books/import
+Content-Type: application/json
+
+{
+  "isbn": "978-83-7578-063-5"
+}
+
+### Show the imported book
+@importedId = {{importBook.response.body.data.id}}
+GET {{baseUrl}}/books/{{importedId}}
+
+### Delete the imported book (so the import above can be repeated)
+DELETE {{baseUrl}}/books/{{importedId}}
+
+### Import with overrides (any editable book field; tags replace fetched ones; rfidUid/locationStatus are rejected)
+POST {{baseUrl}}/books/import
+Content-Type: application/json
+
+{
+  "isbn": "9780261103573",
+  "status": "READING",
+  "pagesRead": 40,
+  "startedAt": "2026-11-24",
+  "tags": ["fantasy", "classics"]
+}
+
+### Import into a free shelf slot (copy a slot id, e.g. slot 5 from the seed, via Prisma Studio)
+POST {{baseUrl}}/books/import
+Content-Type: application/json
+
+{
+  "isbn": "9788375780635",
+  "slotId": "PASTE-SLOT-UUID-HERE"
+}
+
+### 409 — ISBN already in the library (Clean Code from the seed, given as ISBN-10)
+POST {{baseUrl}}/books/import
+Content-Type: application/json
+
+{
+  "isbn": "0-13-235088-2"
+}
+
+### 400 — invalid ISBN
+POST {{baseUrl}}/books/import
+Content-Type: application/json
+
+{
+  "isbn": "123"
+}
+
+### 404 — ISBN unknown to every source
+POST {{baseUrl}}/books/import
+Content-Type: application/json
+
+{
+  "isbn": "9790000000001"
+}

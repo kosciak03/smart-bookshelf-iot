@@ -11,9 +11,12 @@ export type ErrorCode =
   | "VALIDATION_ERROR"
   | "INVALID_JSON"
   | "NOT_FOUND"
+  | "ISBN_NOT_FOUND"
   | "ISBN_CONFLICT"
+  | "SLOT_CONFLICT"
   | "CONFLICT"
   | "PAYLOAD_TOO_LARGE"
+  | "METADATA_SOURCE_UNAVAILABLE"
   | "INTERNAL_ERROR";
 
 /** Single field-level problem reported with a `VALIDATION_ERROR`. */
@@ -81,7 +84,29 @@ export class ConflictError extends HttpError {
    * @param code - Specific conflict code.
    * @param message - Human-readable description.
    */
-  constructor(code: Extract<ErrorCode, "ISBN_CONFLICT" | "CONFLICT">, message: string) {
+  constructor(code: Extract<ErrorCode, "ISBN_CONFLICT" | "SLOT_CONFLICT" | "CONFLICT">, message: string) {
     super(409, code, message);
+  }
+}
+
+/** 404 — no external metadata source knows the requested ISBN. */
+export class IsbnNotFoundError extends HttpError {
+  /**
+   * @param isbn - Normalized ISBN-13 that was looked up.
+   * @param details - Sources that could not be queried (the result may be incomplete).
+   */
+  constructor(isbn: string, details?: ErrorDetail[]) {
+    super(404, "ISBN_NOT_FOUND", `No book metadata found for ISBN ${isbn}`, details);
+  }
+}
+
+/** 502 — external metadata sources failed, so the result is unknown. */
+export class MetadataSourceUnavailableError extends HttpError {
+  /**
+   * @param isbn - Normalized ISBN-13 that was looked up.
+   * @param details - One entry per failed source.
+   */
+  constructor(isbn: string, details: ErrorDetail[]) {
+    super(502, "METADATA_SOURCE_UNAVAILABLE", `Book metadata sources are unavailable for ISBN ${isbn}`, details);
   }
 }

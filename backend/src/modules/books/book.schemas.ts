@@ -74,29 +74,53 @@ export function bookInvariantIssues(book: BookInvariantFields): Array<[field: st
   return issues;
 }
 
+/** Optional (non-key) fields accepted when creating a book. */
+const optionalCreateFields = {
+  description: bookFields.description.exactOptional(),
+  coverUrl: bookFields.coverUrl.exactOptional(),
+  publisher: bookFields.publisher.exactOptional(),
+  publishedYear: bookFields.publishedYear.exactOptional(),
+  tags: bookFields.tags.exactOptional(),
+  pageCount: bookFields.pageCount.exactOptional(),
+  pagesRead: bookFields.pagesRead.exactOptional(),
+  rating: bookFields.rating.exactOptional(),
+  status: bookFields.status.exactOptional(),
+  startedAt: bookFields.startedAt.exactOptional(),
+  finishedAt: bookFields.finishedAt.exactOptional(),
+} as const;
+
 /** Body of `POST /api/books`. Only `title` and `author` are required. */
 export const createBookSchema = z
   .strictObject({
     title: bookFields.title,
     author: bookFields.author,
     isbn: bookFields.isbn.exactOptional(),
-    description: bookFields.description.exactOptional(),
-    coverUrl: bookFields.coverUrl.exactOptional(),
-    publisher: bookFields.publisher.exactOptional(),
-    publishedYear: bookFields.publishedYear.exactOptional(),
-    tags: bookFields.tags.exactOptional(),
-    pageCount: bookFields.pageCount.exactOptional(),
-    pagesRead: bookFields.pagesRead.exactOptional(),
-    rating: bookFields.rating.exactOptional(),
-    status: bookFields.status.exactOptional(),
-    startedAt: bookFields.startedAt.exactOptional(),
-    finishedAt: bookFields.finishedAt.exactOptional(),
+    ...optionalCreateFields,
   })
   .superRefine((book, ctx) => {
     for (const [path, message] of bookInvariantIssues(book)) {
       ctx.addIssue({ code: "custom", path: [path], message });
     }
   });
+
+/**
+ * Body of `POST /api/books/import`: a required ISBN plus optional overrides of
+ * any field fetched from the metadata source, and an optional shelf slot.
+ *
+ * The overrides are only format-checked here; the merged book (fetched data +
+ * overrides) is validated again with {@link createBookSchema}.
+ */
+export const importBookSchema = z.strictObject({
+  isbn: isbnSchema,
+  title: bookFields.title.exactOptional(),
+  author: bookFields.author.exactOptional(),
+  ...optionalCreateFields,
+  /** Shelf slot to assign; the book starts as OFF_SHELF until the FSR confirms it. */
+  slotId: z.uuid({ message: "slotId must be a valid UUID" }).nullable().exactOptional(),
+});
+
+/** Validated body of `POST /api/books/import`. */
+export type ImportBookInput = z.output<typeof importBookSchema>;
 
 /** Body of `PATCH /api/books/:id`. Every field is optional; `null` clears a nullable field. */
 export const updateBookSchema = z
