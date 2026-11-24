@@ -1,0 +1,4 @@
+(sym_lib_table
+  (version 0)
+  (lib (name "Polka_na_ksiazki-eagle-import")(type "KiCad")(uri "${KIPRJMOD}/Polka_na_ksiazki-eagle-import.kicad_sym")(options "")(descr ""))
+)

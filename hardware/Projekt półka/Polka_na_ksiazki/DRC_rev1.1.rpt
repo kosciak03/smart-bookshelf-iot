@@ -1,0 +1,26 @@
+** Drc report for Polka_na_ksiazki.kicad_pcb **
+** Created on 2026-11-24T17:54:19 **
+** Report includes: Errors, Warnings **
+
+** Found 2 DRC violations **
+[lib_footprint_issues]: Obecna konfiguracja nie zawiera biblioteki footprintów 'PCM_Espressif'
+    Local override; warning
+    @(128.6000 mm, 57.4200 mm): Footprint U1
+[lib_footprint_mismatch]: Footprint 'CP_Radial_D10.0mm_P5.00mm' nie odpowiada jego kopii w bibliotece 'Capacitor_THT'
+    Local override; warning
+    @(116.5000 mm, 90.0000 mm): Footprint F1
+
+** Found 0 unconnected pads **
+
+** Found 0 Footprint errors **
+
+** Ignored checks **
+    - Footprint has no courtyard defined
+    - Track endpoint not centered on via
+    - Tuning profile track geometries
+    - Footprint doesn't match symbol's footprint filters
+    - PTH inside courtyard
+    - NPTH inside courtyard
+    - Footprint component type doesn't match footprint pads
+
+** End of Report **

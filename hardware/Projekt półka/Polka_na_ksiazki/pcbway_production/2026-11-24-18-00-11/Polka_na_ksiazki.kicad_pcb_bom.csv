@@ -1,0 +1,12 @@
+﻿Designator,Quantity,Value,Footprint,Package,MPN,DNP,Mount_Type,Description,KiLib_Generator,PROD_ID
+C1,1,1000uF,CP_Radial_D10.0mm_P5.00mm,,,,tht,Polarized capacitor,,
+D1,1,1N5819,D_DO-15_P10.16mm_Horizontal,,,,tht,"40V 1A Schottky Barrier Rectifier Diode, DO-41",diode/THT,
+D2,1,1.5KE6V8A,D_DO-201AE_P15.24mm_Horizontal,,,,tht,"DO-201 Unidirectional TVS diode, 6.8V, 1500W, Alternate KiCAD Library",diode/THT,
+F1,1,RXEF185,CP_Radial_D10.0mm_P5.00mm,,,,tht,"Resettable fuse, polymeric positive temperature coefficient",capacitor/THT/other,
+"HV1, LV1",2,Conn_01x06,PinHeader_1x06_P2.54mm_Vertical,,,,tht,"Generic connector, single row, 01x06, script generated (kicad-library-utils/schlib/autogen/connector/)",,
+"J1, J2, J3",3,Conn_01x05,JST_XH_B5B-XH-A_1x05_P2.50mm_Vertical,,,,tht,"Generic connector, single row, 01x05, script generated (kicad-library-utils/schlib/autogen/connector/)",connector/JST,
+J4,1,Conn_01x08,PinHeader_1x08_P2.54mm_Vertical,,,,tht,"Generic connector, single row, 01x08, script generated (kicad-library-utils/schlib/autogen/connector/)",connector/pin_header_socket,
+PasekLED1,1,DG301-5.0-03P,"TerminalBlock_Phoenix_MKDS-1,5-3-5.08_1x03_P5.08mm_Horizontal",,,,tht,Screw terminal,,CONN-08288
+R1,1,330 R,R_Axial_DIN0207_L6.3mm_D2.5mm_P10.16mm_Horizontal,,,,tht,Resistor,,
+U1,1,ESP32-DevKitC,ESP32-DevKitC,,,,tht,Development Kit,,
+Zasilanie1,1,Barrel_Jack,BarrelJack_Horizontal,,,,tht,DC Barrel Jack,,
