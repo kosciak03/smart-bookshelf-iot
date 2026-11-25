@@ -19,6 +19,41 @@ GET {{baseUrl}}/books?sort=rating&order=desc&pageSize=3&page=2
 ### List books — sorted by title A→Z
 GET {{baseUrl}}/books?sort=title&order=asc
 
+# ---------------------------------------------------------------------------
+# Search and filters (stage 4)
+# ---------------------------------------------------------------------------
+
+### Search — sorted by relevance by default (title, author, publisher, ISBN, tag)
+GET {{baseUrl}}/books?q=clean code
+
+### Search — typos tolerated ("clen cod" finds "Clean Code")
+GET {{baseUrl}}/books?q=clen cod
+
+### Search — Polish diacritics optional ("stanislaw" finds "Stanisław Lem")
+# Solaris is not in the seed: send "Create a book" below first.
+GET {{baseUrl}}/books?q=stanislaw
+
+### Search — every word must match, possibly in different fields (needs Solaris too)
+GET {{baseUrl}}/books?q=solaris lem
+
+### Search — by ISBN (hyphens, ISBN-10 or a fragment)
+GET {{baseUrl}}/books?q=0-13-235088-2
+
+### Filter — several reading statuses (comma-separated or repeated keys)
+GET {{baseUrl}}/books?status=READING,READ&sort=title
+
+### Filter — books currently standing on the shelf
+GET {{baseUrl}}/books?location=ON_SHELF
+
+### Filter — rated 4 or more, best first
+GET {{baseUrl}}/books?minRating=4&sort=rating
+
+### Filter — by tag (all given tags required)
+GET {{baseUrl}}/books?tag=programming
+
+### Combined — search + status + rating, 5 per page
+GET {{baseUrl}}/books?q=code&status=READ&minRating=4&pageSize=5
+
 ### Create a book (ISBN with hyphens is normalized to ISBN-13)
 # @name createBook
 POST {{baseUrl}}/books
@@ -107,6 +142,12 @@ Content-Type: application/json
 
 ### 400 — invalid query parameter
 GET {{baseUrl}}/books?pageSize=500
+
+### 400 — unknown status value
+GET {{baseUrl}}/books?status=READ,LOST
+
+### 400 — sort=relevance without a search phrase
+GET {{baseUrl}}/books?sort=relevance
 
 ### 400 — malformed id
 GET {{baseUrl}}/books/not-a-uuid

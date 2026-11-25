@@ -4,12 +4,17 @@
 // rating 1–5 or FSR channel 0–4) are added manually in the migration SQL.
 
 generator client {
-  provider = "prisma-client-js"
+  provider        = "prisma-client-js"
+  // Lets Prisma manage PostgreSQL extensions (pg_trgm for full-text-like search).
+  previewFeatures = ["postgresqlExtensions"]
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  /// pg_trgm: trigram similarity and indexes for substring and typo-tolerant search;
+  /// unaccent: diacritic folding ("wiedzmin" finds "Wiedźmin").
+  extensions = [pg_trgm, unaccent]
 }
 
 /// Reading status of a book in the user's library.
@@ -81,6 +86,12 @@ model Book {
 
   @@index([status])
   @@index([locationStatus])
+  // Indexes for the `q` search (see src/modules/books/book-search.ts).
+  @@index([isbn(ops: raw("gin_trgm_ops"))], type: Gin, map: "Book_isbn_trgm_idx")
+  @@index([tags], type: Gin)
+  // The search also uses trigram GIN expression indexes on
+  // immutable_unaccent(title | author | publisher). Prisma cannot express them,
+  // so they live only in migration 20261125122747_add_search_trigram_indexes.
 }
 
 /// A physical slot of the shelf: one FSR sensor and a contiguous range of LEDs.

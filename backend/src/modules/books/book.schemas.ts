@@ -6,7 +6,7 @@
  * here: they are managed by the shelf/device module, so strict objects reject
  * them with HTTP 400.
  */
-import { BookStatus } from "@prisma/client";
+import { BookStatus, LocationStatus } from "@prisma/client";
 import { z } from "zod";
 import { normalizeIsbn } from "../../lib/isbn.js";
 
@@ -142,16 +142,107 @@ export const updateBookSchema = z
   })
   .refine((patch) => Object.keys(patch).length > 0, { message: "At least one field must be provided" });
 
-/** Fields the book list can be sorted by. */
-export const BOOK_SORT_FIELDS = ["title", "author", "createdAt", "updatedAt", "rating", "publishedYear"] as const;
+/**
+ * Fields the book list can be sorted by. `relevance` ranks search matches and
+ * is only allowed together with `q`.
+ */
+export const BOOK_SORT_FIELDS = [
+  "relevance",
+  "title",
+  "author",
+  "createdAt",
+  "updatedAt",
+  "rating",
+  "publishedYear",
+] as const;
 
-/** Query string of `GET /api/books`. */
-export const listBooksQuerySchema = z.strictObject({
-  page: z.coerce.number().int().min(1).default(1),
-  pageSize: z.coerce.number().int().min(1).max(100).default(20),
-  sort: z.enum(BOOK_SORT_FIELDS).default("createdAt"),
-  order: z.enum(["asc", "desc"]).default("desc"),
-});
+/** Sort fields whose natural default direction is ascending (A→Z). */
+const ASCENDING_BY_DEFAULT: ReadonlySet<string> = new Set(["title", "author"]);
+
+/** Maximum length of the `q` search phrase. */
+export const SEARCH_QUERY_MAX_LENGTH = 200;
+/** Maximum number of whitespace-separated terms in `q`. */
+export const SEARCH_MAX_TERMS = 10;
+
+/**
+ * Turns a multi-value query parameter into a list. Accepts both a
+ * comma-separated value (`status=READ,READING`) and a repeated key
+ * (`status=READ&status=READING`); empty items are dropped and an empty list
+ * becomes `undefined` (no filter).
+ *
+ * @param value - Raw query value (`string`, `string[]` or `undefined`).
+ * @returns Trimmed items, `undefined`, or the input unchanged when it is of another type.
+ */
+function splitListParam(value: unknown): unknown {
+  if (value === undefined) return undefined;
+  const parts = Array.isArray(value) ? value : [value];
+  if (!parts.every((part) => typeof part === "string")) return value;
+  const items = parts.flatMap((part) => part.split(",")).map((item) => item.trim()).filter((item) => item !== "");
+  return items.length > 0 ? items : undefined;
+}
+
+/**
+ * Multi-value query parameter restricted to the given enum values.
+ *
+ * @param values - Allowed values.
+ * @returns Schema producing a de-duplicated list or `undefined`.
+ */
+function enumListParam<const T extends readonly [string, ...string[]]>(values: T) {
+  return z.preprocess(
+    splitListParam,
+    z
+      .array(z.enum(values))
+      .max(values.length * 2)
+      .transform((items) => [...new Set(items)])
+      .optional(),
+  );
+}
+
+/** Query string of `GET /api/books`: pagination, filters, search and sorting. */
+export const listBooksQuerySchema = z
+  .strictObject({
+    page: z.coerce.number().int().min(1).default(1),
+    pageSize: z.coerce.number().int().min(1).max(100).default(20),
+    /** Search phrase: every term must match the title, author, publisher, ISBN or a tag (typos tolerated). */
+    q: z
+      .string()
+      .trim()
+      .max(SEARCH_QUERY_MAX_LENGTH)
+      .transform((value) => (value === "" ? undefined : value))
+      .optional(),
+    /** Reading status filter (any of the given values). */
+    status: enumListParam(Object.values(BookStatus) as [BookStatus, ...BookStatus[]]),
+    /** Shelf location filter (any of the given values). */
+    location: enumListParam(Object.values(LocationStatus) as [LocationStatus, ...LocationStatus[]]),
+    /** Minimum rating 1–5; unrated books are excluded. */
+    minRating: z.coerce.number().int().min(1).max(5).optional(),
+    /** Tag filter: the book must have every given tag (case-insensitive). */
+    tag: z.preprocess(
+      splitListParam,
+      z
+        .array(z.string().max(50))
+        .max(20)
+        .transform((tags) => [...new Set(tags.map((tag) => tag.toLowerCase()))])
+        .optional(),
+    ),
+    /** Defaults to `relevance` when `q` is given, otherwise `createdAt`. */
+    sort: z.enum(BOOK_SORT_FIELDS).optional(),
+    /** Defaults to `asc` for `title` and `author`, otherwise `desc`. */
+    order: z.enum(["asc", "desc"]).optional(),
+  })
+  .superRefine((query, ctx) => {
+    if (query.sort === "relevance" && query.q === undefined) {
+      ctx.addIssue({ code: "custom", path: ["sort"], message: "sort=relevance requires a search phrase (q)" });
+    }
+    if (query.q !== undefined && query.q.split(/\s+/).length > SEARCH_MAX_TERMS) {
+      ctx.addIssue({ code: "custom", path: ["q"], message: `q can contain at most ${SEARCH_MAX_TERMS} words` });
+    }
+  })
+  .transform((query) => {
+    const sort = query.sort ?? (query.q !== undefined ? "relevance" : "createdAt");
+    const order = query.order ?? (ASCENDING_BY_DEFAULT.has(sort) ? "asc" : "desc");
+    return { ...query, sort, order };
+  });
 
 /** Route parameters of `/api/books/:id`. */
 export const bookIdParamsSchema = z.object({

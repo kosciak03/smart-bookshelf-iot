@@ -11,6 +11,15 @@
  * | PATCH  | `/:id` | 200     | `{ data: Book }`                   |
  * | DELETE | `/:id` | 204     | —                                  |
  *
+ * `GET /` query parameters (all optional):
+ * - `q` – search phrase (title, author, publisher, ISBN, tag; typo- and diacritic-tolerant),
+ * - `status`, `location` – one or more enum values (`a,b` or repeated keys),
+ * - `minRating` – 1–5, `tag` – required tags (all must match),
+ * - `sort` – `relevance` (default with `q`), `title`, `author`, `createdAt`
+ *   (default), `updatedAt`, `rating`, `publishedYear`; `order` – `asc`/`desc`
+ *   (default `asc` for text fields, `desc` otherwise),
+ * - `page`, `pageSize` – pagination (`pageSize` ≤ 100).
+ *
  * Errors use the common format described in `lib/http-errors.ts`.
  */
 import { Router } from "express";

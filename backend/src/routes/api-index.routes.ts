@@ -28,7 +28,12 @@ export interface ApiIndexResponse {
 const ENDPOINTS: EndpointInfo[] = [
   { method: "GET", path: "/api", description: "This endpoint list" },
   { method: "GET", path: "/api/health", description: "Service and database status" },
-  { method: "GET", path: "/api/books", description: "List books (query: page, pageSize, sort, order)" },
+  {
+    method: "GET",
+    path: "/api/books",
+    description:
+      "List books (query: q, status, location, minRating, tag, sort incl. relevance, order, page, pageSize)",
+  },
   { method: "GET", path: "/api/books/:id", description: "Get a single book" },
   { method: "POST", path: "/api/books", description: "Create a book" },
   { method: "PATCH", path: "/api/books/:id", description: "Update a book partially" },
