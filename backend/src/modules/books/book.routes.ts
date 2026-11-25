@@ -20,6 +20,10 @@
  *   (default `asc` for text fields, `desc` otherwise),
  * - `page`, `pageSize` – pagination (`pageSize` ≤ 100).
  *
+ * `POST /`, `POST /import` and `PATCH /:id` apply the reading rules from
+ * `book-rules.ts` (progress → status, status change → reading dates, rating
+ * only for READING/READ books).
+ *
  * Errors use the common format described in `lib/http-errors.ts`.
  */
 import { Router } from "express";

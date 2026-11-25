@@ -6,8 +6,8 @@ import type { Prisma } from "@prisma/client";
 import { NotFoundError, ValidationError } from "../../lib/http-errors.js";
 import { prisma } from "../../lib/prisma.js";
 import { searchBooks } from "./book-search.js";
+import { applyReadingRules, type ReadingIssue, type ReadingPatch, type ReadingState } from "./book-rules.js";
 import {
-  bookInvariantIssues,
   type BookSortField,
   type CreateBookInput,
   type ListBooksQuery,
@@ -151,19 +151,60 @@ export async function getBook(id: string): Promise<BookDto> {
 }
 
 /**
+ * Picks the reading fields of a validated input (missing fields stay missing).
+ *
+ * @param input - Create or update input.
+ * @returns The reading part of the input.
+ */
+function readingPatch(input: CreateBookInput | UpdateBookInput): ReadingPatch {
+  const { status, pageCount, pagesRead, rating, startedAt, finishedAt } = input;
+  return { status, pageCount, pagesRead, rating, startedAt, finishedAt };
+}
+
+/**
+ * Converts reading-rule violations into an HTTP 400 error.
+ *
+ * @param message - Error message.
+ * @param issues - Rule violations.
+ * @returns The error to throw.
+ */
+function readingRulesError(message: string, issues: ReadingIssue[]): ValidationError {
+  return new ValidationError(
+    message,
+    issues.map(([field, message]) => ({ path: `body.${field}`, message })),
+  );
+}
+
+/**
+ * Applies the reading rules (see `book-rules.ts`) to the data of a new book.
+ *
+ * @param input - Validated book data.
+ * @param now - Current time.
+ * @returns The data with derived reading fields (status, pagesRead, ...).
+ * @throws {@link ValidationError} when the reading fields are inconsistent.
+ */
+export function resolveNewBook<T extends CreateBookInput>(input: T, now: Date = new Date()): T & ReadingState {
+  const { state, issues } = applyReadingRules(null, readingPatch(input), now);
+  if (issues.length > 0) throw readingRulesError("Invalid request body", issues);
+  return { ...input, ...state };
+}
+
+/**
  * Creates a book. A duplicate ISBN is reported by the database (P2002) and
  * mapped to HTTP 409 by the error handler.
  *
  * @param input - Validated book data.
  * @returns The created book.
+ * @throws {@link ValidationError} when the reading fields are inconsistent.
  */
 export async function createBook(input: CreateBookInput): Promise<BookDto> {
-  return prisma.book.create({ data: input, include: bookInclude });
+  return prisma.book.create({ data: resolveNewBook(input), include: bookInclude });
 }
 
 /**
- * Partially updates a book. Cross-field rules are checked against the merged
- * state (stored values + patch), e.g. lowering `pageCount` below `pagesRead`.
+ * Partially updates a book. The reading rules are applied to the merged state
+ * (stored values + patch): e.g. progress changes the status, a status change
+ * records reading dates, and lowering `pageCount` below `pagesRead` fails.
  *
  * @param id - Book UUID.
  * @param patch - Validated fields to change.
@@ -173,14 +214,9 @@ export async function createBook(input: CreateBookInput): Promise<BookDto> {
  */
 export async function updateBook(id: string, patch: UpdateBookInput): Promise<BookDto> {
   const current = await getBook(id);
-  const issues = bookInvariantIssues({ ...current, ...patch });
-  if (issues.length > 0) {
-    throw new ValidationError(
-      "Update would leave the book in an inconsistent state",
-      issues.map(([field, message]) => ({ path: `body.${field}`, message })),
-    );
-  }
-  return prisma.book.update({ where: { id }, data: patch, include: bookInclude });
+  const { state, issues } = applyReadingRules(current, readingPatch(patch), new Date());
+  if (issues.length > 0) throw readingRulesError("Update would leave the book in an inconsistent state", issues);
+  return prisma.book.update({ where: { id }, data: { ...patch, ...state }, include: bookInclude });
 }
 
 /**

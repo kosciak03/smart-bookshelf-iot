@@ -16,7 +16,7 @@ import { parseRequest } from "../../lib/validate.js";
 import type { MetadataSource } from "../isbn/metadata.types.js";
 import { isbnLookupService } from "../isbn/isbn.service.js";
 import { createBookSchema, type ImportBookInput } from "./book.schemas.js";
-import { bookInclude, type BookDto } from "./book.service.js";
+import { bookInclude, resolveNewBook, type BookDto } from "./book.service.js";
 
 /** Result of an import. */
 export interface ImportBookResult {
@@ -79,7 +79,7 @@ export async function importBook(input: ImportBookInput, rawBody: Record<string,
     pageCount: metadata.pageCount,
     tags: metadata.tags,
   };
-  const data = parseRequest(createBookSchema, { ...fetched, ...overrides, isbn }, "body");
+  const data = resolveNewBook(parseRequest(createBookSchema, { ...fetched, ...overrides, isbn }, "body"));
 
   const book = await prisma.book.create({
     data: { ...data, slotId, locationStatus: slotId === null ? "UNASSIGNED" : "OFF_SHELF" },

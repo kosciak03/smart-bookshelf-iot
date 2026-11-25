@@ -88,6 +88,17 @@ describe("POST /api/books/import", () => {
     });
   });
 
+  it("applies the reading rules to the merged data (READ completes the fetched page count)", async () => {
+    mockUpstreams({ google: { body: googleBooksCleanCode }, openLibrary: { body: openLibraryEmpty } });
+
+    const read = await request(app).post("/api/books/import").send({ isbn: CLEAN_CODE_ISBN, status: "READ", rating: 5 }).expect(201);
+    expect(read.body.data).toMatchObject({ status: "READ", pageCount: 464, pagesRead: 464, rating: 5, finishedAt: null });
+
+    await prisma.book.deleteMany();
+    const rated = await request(app).post("/api/books/import").send({ isbn: CLEAN_CODE_ISBN, rating: 5 }).expect(400);
+    expect(rated.body.error.details[0].path).toBe("body.rating");
+  });
+
   it("assigns a free shelf slot (OFF_SHELF until the FSR confirms it)", async () => {
     mockUpstreams({ google: { body: googleBooksCleanCode }, openLibrary: { body: openLibraryEmpty } });
     const slot = await createSlot(3);

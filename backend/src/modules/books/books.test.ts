@@ -145,8 +145,8 @@ describe("GET /api/books", () => {
 
   it("keeps books without a rating at the end when sorting by rating", async () => {
     await createBook({ title: "Unrated" });
-    await createBook({ title: "Three", rating: 3 });
-    await createBook({ title: "Five", rating: 5 });
+    await createBook({ title: "Three", status: "READ", rating: 3 });
+    await createBook({ title: "Five", status: "READ", rating: 5 });
 
     const response = await request(app).get("/api/books?sort=rating&order=desc").expect(200);
     expect(response.body.data.map((book: { title: string }) => book.title)).toEqual(["Five", "Three", "Unrated"]);
@@ -192,7 +192,7 @@ describe("GET /api/books/:id", () => {
 
 describe("PATCH /api/books/:id", () => {
   it("updates only the provided fields and clears fields set to null", async () => {
-    const created = await createBook({ publisher: "Prentice Hall", rating: 4 });
+    const created = await createBook({ publisher: "Prentice Hall", status: "READ", rating: 4 });
     const response = await request(app)
       .patch(`/api/books/${created.id}`)
       .send({ title: "Clean Code (2nd ed.)", rating: null })

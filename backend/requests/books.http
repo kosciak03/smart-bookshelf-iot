@@ -74,14 +74,74 @@ Content-Type: application/json
 @bookId = {{createBook.response.body.data.id}}
 GET {{baseUrl}}/books/{{bookId}}
 
-### Update reading progress and rating
+# ---------------------------------------------------------------------------
+# Reading progress rules (stage 5) — run in order on the book created above
+# ---------------------------------------------------------------------------
+
+### Record progress → status becomes READING, startedAt = now
 PATCH {{baseUrl}}/books/{{bookId}}
 Content-Type: application/json
 
 {
-  "status": "READING",
-  "pagesRead": 50,
-  "startedAt": "2026-11-23"
+  "pagesRead": 50
+}
+
+### Rate while reading (allowed for READING and READ books)
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "rating": 4
+}
+
+### Reach the last page → status becomes READ, finishedAt = now
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "pagesRead": 204
+}
+
+### Re-read → back to READING, progress restarts, rating kept
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "status": "READING"
+}
+
+### Mark as READ → pagesRead = pageCount, finishedAt = now
+# (an explicit "finishedAt" is also accepted, but not earlier than startedAt)
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "status": "READ"
+}
+
+### Back to the wish list → progress, dates and rating are cleared
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "status": "WANT_TO_READ"
+}
+
+### 400 — a wish-list book cannot be rated
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "rating": 5
+}
+
+### 400 — a READ book with unread pages
+PATCH {{baseUrl}}/books/{{bookId}}
+Content-Type: application/json
+
+{
+  "status": "READ",
+  "pagesRead": 10
 }
 
 ### Clear a nullable field (null removes the value)
