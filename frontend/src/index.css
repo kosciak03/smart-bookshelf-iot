@@ -1,1 +1,20 @@
 @import "tailwindcss";
+
+/*
+ * Goodreads-inspired palette: warm paper background, dark bark-brown header
+ * and text, leaf-green primary actions.
+ */
+@theme {
+  --color-paper: #f4f1ea;
+  --color-bark: #382110;
+  --color-bark-light: #5a3e2b;
+  --color-leaf: #409d69;
+  --color-leaf-dark: #357f55;
+  --color-star: #e87400;
+  --font-serif: "Merriweather", "Georgia", "Times New Roman", serif;
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-bark);
+}

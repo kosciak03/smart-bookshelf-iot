@@ -1,0 +1,234 @@
+/**
+ * @packageDocumentation
+ * Add-book view (`/books/new`): look up an ISBN and import the book, or enter
+ * the details manually. `?mode=manual` opens the manual form, `&isbn=` fills
+ * in the ISBN (used when a lookup finds nothing).
+ */
+import { ArrowLeft, Search } from 'lucide-react'
+import { useState, type FormEvent } from 'react'
+import { Link, useNavigate, useSearchParams } from 'react-router'
+import { BOOK_STATUSES, type BookMetadata, type BookStatus } from '../api/books'
+import { BookCover } from '../components/BookCover'
+import { BookForm } from '../components/BookForm'
+import { ErrorMessage, Spinner } from '../components/Feedback'
+import { useCreateBook, useImportBook, useIsbnLookup } from '../hooks/useBooks'
+import { EMPTY_BOOK_FORM, formValuesToCreateInput, type BookFormValues } from '../lib/book-form'
+import { formatIsbn, STATUS_LABELS } from '../lib/labels'
+
+/** Human-readable metadata source. */
+const SOURCE_LABELS: Record<BookMetadata['source'], string> = {
+  'google-books': 'Google Books',
+  'open-library': 'Open Library',
+}
+
+/**
+ * Renders the add-book page with the "By ISBN" and "Manually" tabs.
+ */
+export function AddBookPage() {
+  const [search, setSearch] = useSearchParams()
+  const manual = search.get('mode') === 'manual'
+  const isbn = search.get('isbn') ?? ''
+
+  const switchTo = (mode: 'isbn' | 'manual', isbnValue = isbn) =>
+    setSearch(
+      (previous) => {
+        const next = new URLSearchParams(previous)
+        if (mode === 'manual') next.set('mode', 'manual')
+        else next.delete('mode')
+        if (isbnValue) next.set('isbn', isbnValue)
+        else next.delete('isbn')
+        return next
+      },
+      { replace: true },
+    )
+
+  return (
+    <div className="mx-auto max-w-3xl space-y-6">
+      <Link to="/" className="inline-flex items-center gap-1 text-sm text-stone-600 hover:text-bark">
+        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+        My books
+      </Link>
+      <h1 className="font-serif text-2xl font-bold">Add a book</h1>
+
+      <div className="flex gap-1 border-b border-stone-300" role="tablist">
+        {(['isbn', 'manual'] as const).map((mode) => {
+          const active = (mode === 'manual') === manual
+          return (
+            <button
+              key={mode}
+              type="button"
+              role="tab"
+              aria-selected={active}
+              onClick={() => switchTo(mode)}
+              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
+                active ? 'border-bark text-bark' : 'border-transparent text-stone-500 hover:text-bark'
+              }`}
+            >
+              {mode === 'isbn' ? 'By ISBN' : 'Manually'}
+            </button>
+          )
+        })}
+      </div>
+
+      {manual ? <ManualEntry isbn={isbn} /> : <IsbnImport initialIsbn={isbn} onManual={(value) => switchTo('manual', value)} />}
+    </div>
+  )
+}
+
+/**
+ * ISBN lookup with a preview of the found metadata and an import button.
+ *
+ * @param props.initialIsbn - ISBN to prefill.
+ * @param props.onManual - Switches to the manual form with the given ISBN.
+ */
+function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: (isbn: string) => void }) {
+  const navigate = useNavigate()
+  const [input, setInput] = useState(initialIsbn)
+  const [submitted, setSubmitted] = useState<string | null>(initialIsbn || null)
+  const [status, setStatus] = useState<BookStatus>('WANT_TO_READ')
+  const lookup = useIsbnLookup(submitted)
+  const importBook = useImportBook()
+
+  const handleLookup = (event: FormEvent) => {
+    event.preventDefault()
+    const value = input.trim()
+    if (value !== '') {
+      importBook.reset()
+      setSubmitted(value)
+    }
+  }
+
+  const handleImport = (metadata: BookMetadata) =>
+    importBook.mutate({ isbn: metadata.isbn, status }, { onSuccess: (book) => navigate(`/books/${book.id}`) })
+
+  const notFound = lookup.error?.code === 'ISBN_NOT_FOUND'
+
+  return (
+    <div className="space-y-6">
+      <form onSubmit={handleLookup} className="flex flex-wrap items-end gap-3">
+        <label className="min-w-64 flex-1 text-sm">
+          <span className="font-medium text-stone-700">ISBN</span>
+          <input
+            value={input}
+            onChange={(event) => setInput(event.target.value)}
+            placeholder="e.g. 978-83-7578-063-5 or 0132350882"
+            inputMode="numeric"
+            className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/30"
+          />
+        </label>
+        <button
+          type="submit"
+          disabled={lookup.isFetching}
+          className="inline-flex items-center gap-2 rounded-md bg-bark px-4 py-2 text-sm font-medium text-white hover:bg-bark-light disabled:opacity-60"
+        >
+          <Search className="h-4 w-4" aria-hidden="true" />
+          Look up
+        </button>
+      </form>
+      <p className="text-xs text-stone-500">
+        The ISBN is printed on the back cover above the barcode. Book data comes from Google Books or Open Library.
+      </p>
+
+      {lookup.isFetching && <Spinner label="Searching book databases…" />}
+
+      {lookup.error && !lookup.isFetching && (
+        <ErrorMessage error={lookup.error}>
+          {(notFound || lookup.error.code === 'METADATA_SOURCE_UNAVAILABLE') && (
+            <button type="button" className="font-medium underline" onClick={() => onManual(submitted ?? '')}>
+              Enter the details manually
+            </button>
+          )}
+        </ErrorMessage>
+      )}
+
+      {lookup.data && !lookup.isFetching && (
+        <article className="flex flex-col gap-5 rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row">
+          <div className="w-28 shrink-0">
+            <BookCover title={lookup.data.title} author={lookup.data.author ?? ''} coverUrl={lookup.data.coverUrl} />
+          </div>
+          <div className="flex-1 space-y-3">
+            <div>
+              <h2 className="font-serif text-xl font-bold">{lookup.data.title}</h2>
+              <p className="text-stone-700">{lookup.data.author ? `by ${lookup.data.author}` : 'Author unknown'}</p>
+              <p className="mt-1 text-xs text-stone-500">
+                {[
+                  lookup.data.publisher,
+                  lookup.data.publishedYear,
+                  lookup.data.pageCount && `${lookup.data.pageCount} pages`,
+                  `ISBN ${formatIsbn(lookup.data.isbn)}`,
+                ]
+                  .filter(Boolean)
+                  .join(' · ')}
+              </p>
+              <p className="mt-1 text-xs text-stone-400">Source: {SOURCE_LABELS[lookup.data.source]}</p>
+            </div>
+            {lookup.data.description && <p className="line-clamp-4 text-sm text-stone-700">{lookup.data.description}</p>}
+
+            {lookup.data.author === null ? (
+              <ErrorMessage error={new Error('The book database has no author for this ISBN.')}>
+                <button type="button" className="font-medium underline" onClick={() => onManual(lookup.data.isbn)}>
+                  Enter the details manually
+                </button>
+              </ErrorMessage>
+            ) : (
+              <div className="flex flex-wrap items-end gap-3">
+                <label className="text-sm">
+                  <span className="block font-medium text-stone-700">Shelf</span>
+                  <select
+                    value={status}
+                    onChange={(event) => setStatus(event.target.value as BookStatus)}
+                    className="mt-1 rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm"
+                  >
+                    {BOOK_STATUSES.map((value) => (
+                      <option key={value} value={value}>
+                        {STATUS_LABELS[value]}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                <button
+                  type="button"
+                  disabled={importBook.isPending}
+                  onClick={() => handleImport(lookup.data)}
+                  className="rounded-md bg-leaf px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-leaf-dark disabled:opacity-60"
+                >
+                  {importBook.isPending ? 'Adding…' : 'Add to my books'}
+                </button>
+              </div>
+            )}
+            {importBook.error && <ErrorMessage error={importBook.error} />}
+          </div>
+        </article>
+      )}
+    </div>
+  )
+}
+
+/**
+ * Manual entry form.
+ *
+ * @param props.isbn - ISBN to prefill.
+ */
+function ManualEntry({ isbn }: { isbn: string }) {
+  const navigate = useNavigate()
+  const create = useCreateBook()
+
+  const handleSubmit = (values: BookFormValues) =>
+    create.mutate(formValuesToCreateInput(values), { onSuccess: (book) => navigate(`/books/${book.id}`) })
+
+  return (
+    <div className="space-y-4">
+      {create.error && create.error.details.length === 0 && <ErrorMessage error={create.error} />}
+      <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+        <BookForm
+          initialValues={{ ...EMPTY_BOOK_FORM, isbn }}
+          onSubmit={handleSubmit}
+          submitLabel="Add to my books"
+          submitting={create.isPending}
+          serverErrors={create.error?.fieldErrors()}
+          showStatus
+        />
+      </div>
+    </div>
+  )
+}

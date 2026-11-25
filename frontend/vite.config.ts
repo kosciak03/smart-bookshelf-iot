@@ -1,3 +1,4 @@
+/// <reference types="vitest/config" />
 /**
  * @packageDocumentation
  * Vite configuration for the Smart Bookshelf web application.
@@ -5,6 +6,8 @@
  * Requests to `/api` are proxied to the backend, so the browser always talks to
  * a single origin (no CORS in development). The proxy target is configurable via
  * `VITE_API_PROXY_TARGET` (Docker sets it to `http://backend:3000`).
+ *
+ * The `test` section configures Vitest (jsdom environment, Testing Library matchers).
  */
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
@@ -29,6 +32,12 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
         },
       },
+    },
+    test: {
+      environment: 'jsdom',
+      setupFiles: ['./src/test/setup.ts'],
+      restoreMocks: true,
+      unstubGlobals: true,
     },
   }
 })
