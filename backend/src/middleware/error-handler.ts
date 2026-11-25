@@ -11,6 +11,7 @@
  * | Body larger than the limit           | 413    | `PAYLOAD_TOO_LARGE` |
  * | Prisma P2002 (unique, `isbn`)        | 409    | `ISBN_CONFLICT`     |
  * | Prisma P2002 (unique, `slotId`)      | 409    | `SLOT_CONFLICT`     |
+ * | Prisma P2002 (unique, `rfidUid`)     | 409    | `RFID_CONFLICT`     |
  * | Prisma P2002 (unique, other field)   | 409    | `CONFLICT`          |
  * | Prisma P2025 (record not found)      | 404    | `NOT_FOUND`         |
  * | Anything else                        | 500    | `INTERNAL_ERROR`    |
@@ -97,6 +98,8 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, _req, res, nex
         sendError(res, 409, "ISBN_CONFLICT", "A book with this ISBN already exists");
       } else if (fields.includes("slotId")) {
         sendError(res, 409, "SLOT_CONFLICT", "This shelf slot is already assigned to another book");
+      } else if (fields.includes("rfidUid")) {
+        sendError(res, 409, "RFID_CONFLICT", "This RFID tag is already assigned to another book");
       } else {
         sendError(res, 409, "CONFLICT", `Unique constraint violated on: ${fields.join(", ")}`);
       }

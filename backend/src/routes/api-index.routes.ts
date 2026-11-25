@@ -12,7 +12,7 @@ const packageJson = JSON.parse(readFileSync(new URL("../../package.json", import
 
 /** Single entry of the endpoint list. */
 export interface EndpointInfo {
-  method: "GET" | "POST" | "PATCH" | "DELETE";
+  method: "GET" | "POST" | "PUT" | "PATCH" | "DELETE";
   path: string;
   description: string;
 }
@@ -41,6 +41,12 @@ const ENDPOINTS: EndpointInfo[] = [
   { method: "POST", path: "/api/books/import", description: "Create a book from ISBN metadata ({ isbn, ...overrides })" },
   { method: "GET", path: "/api/isbn/:isbn", description: "Look up book metadata by ISBN (Google Books, Open Library)" },
   { method: "GET", path: "/api/stats", description: "Reading statistics (query: year)" },
+  { method: "GET", path: "/api/shelf", description: "Smart shelf state: device, slots, LEDs, pending RFID tag (query: shelf)" },
+  { method: "GET", path: "/api/shelf/events", description: "Recent shelf events (query: shelf, limit)" },
+  { method: "POST", path: "/api/shelf/highlights/clear", description: "Switch off all slot highlights (query: shelf)" },
+  { method: "POST", path: "/api/books/:id/locate", description: "Light the book's slot to find it on the shelf" },
+  { method: "PUT", path: "/api/books/:id/slot", description: "Assign a shelf slot ({ slotId } or null)" },
+  { method: "PUT", path: "/api/books/:id/rfid", description: "Link an RFID tag ({ uid } or null)" },
 ];
 
 /** Router exposing `GET /` (mounted under `/api`). */

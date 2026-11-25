@@ -11,6 +11,7 @@ import { env } from "./config/env.js";
 import { errorHandler, notFoundHandler } from "./middleware/error-handler.js";
 import { booksRouter } from "./modules/books/book.routes.js";
 import { isbnRouter } from "./modules/isbn/isbn.routes.js";
+import { bookShelfRouter, shelfRouter } from "./modules/shelf/shelf.routes.js";
 import { statsRouter } from "./modules/stats/stats.routes.js";
 import { apiIndexRouter } from "./routes/api-index.routes.js";
 import { healthRouter } from "./routes/health.routes.js";
@@ -30,6 +31,8 @@ export function createApp(): Express {
   app.use("/api", apiIndexRouter);
   app.use("/api", healthRouter);
   app.use("/api/books", booksRouter);
+  app.use("/api/books", bookShelfRouter);
+  app.use("/api/shelf", shelfRouter);
   app.use("/api/isbn", isbnRouter);
   app.use("/api/stats", statsRouter);
 

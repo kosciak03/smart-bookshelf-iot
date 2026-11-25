@@ -1,4 +1,4 @@
-# Local development stack: PostgreSQL + backend API + frontend (hot reload).
+# Local development stack: PostgreSQL + MQTT broker + backend API + frontend (hot reload).
 # Usage: docker compose up --build
 services:
   postgres:
@@ -43,6 +43,23 @@ services:
       retries: 10
       start_period: 10s
 
+  # MQTT broker for the ESP32 shelf (port 1883 must be reachable from the LAN).
+  mosquitto:
+    image: eclipse-mosquitto:2
+    container_name: smart-bookshelf-mqtt
+    restart: unless-stopped
+    ports:
+      - "1883:1883"
+    volumes:
+      - ./mosquitto/config:/mosquitto/config:ro
+      - mosquitto_data:/mosquitto/data
+    healthcheck:
+      test: ["CMD-SHELL", "mosquitto_sub -h 127.0.0.1 -t '$$SYS/broker/uptime' -C 1 -W 3 > /dev/null || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+
   backend:
     build:
       context: ./backend
@@ -52,11 +69,14 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
+      mosquitto:
+        condition: service_healthy
     environment:
       NODE_ENV: development
       PORT: 3000
       DATABASE_URL: postgresql://${POSTGRES_USER:-bookshelf_admin}:${POSTGRES_PASSWORD:-bookshelf_secret_password}@postgres:5432/${POSTGRES_DB:-smart_bookshelf}?schema=public
       CORS_ORIGIN: http://localhost:5173
+      MQTT_URL: mqtt://mosquitto:1883
       # Used by `npm test` inside the container (see src/test/test-database.ts).
       TEST_DATABASE_URL: postgresql://bookshelf_test:bookshelf_test@postgres-test:5432/smart_bookshelf_test?schema=public
       # Bind mounts from Windows/macOS do not emit inotify events, so watch by polling.
@@ -93,3 +113,4 @@ services:
 
 volumes:
   postgres_data:
+  mosquitto_data:

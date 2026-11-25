@@ -63,6 +63,24 @@ const envSchema = z.object({
     .string()
     .default("Europe/Warsaw")
     .refine(isValidTimeZone, { message: "Unknown IANA time zone (e.g. Europe/Warsaw)" }),
+  /**
+   * MQTT broker shared with the ESP32 shelf, e.g. `mqtt://mosquitto:1883`.
+   * When empty, the shelf integration is disabled (the REST API still works).
+   */
+  MQTT_URL: z
+    .string()
+    .trim()
+    .optional()
+    .transform((value) => (value ? value : undefined))
+    .pipe(z.url({ protocol: /^(mqtts?|wss?)$/ }).optional()),
+  /** First segment of every shelf topic (`<prefix>/shelf/<number>/...`). */
+  MQTT_TOPIC_PREFIX: z.string().regex(/^[a-z0-9_-]+$/i).default("smartbookshelf"),
+  /** How long a "locate" or "put back here" slot highlight stays on (seconds). */
+  SHELF_HIGHLIGHT_SECONDS: z.coerce.number().int().positive().default(60),
+  /** After an RFID scan, how long the scanned book is expected in its slot (seconds). */
+  SHELF_EXPECT_SECONDS: z.coerce.number().int().positive().default(60),
+  /** Number of WS2812B LEDs on the strip (walls + slots). */
+  SHELF_LED_COUNT: z.coerce.number().int().min(1).max(300).default(11),
 });
 
 /** Strongly typed, validated application configuration. */

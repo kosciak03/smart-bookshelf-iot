@@ -5,6 +5,7 @@
 2. **Documentation:** Every function, class, and module in `firmware/` must include **Doxygen-style comments** (`/** @brief ... */`). Every module/service in `backend/` and `frontend/` must use **TSDoc comments**.
 3. **Commit Convention:** Follow **Conventional Commits v1.0.0** (`feat:`, `fix:`, `docs:`, `refactor:`, `test:`, `chore:`).
 4. **Architecture:** Monorepo consisting of `firmware/` (ESP32 C++), `backend/` (Node.js/TypeScript + PostgreSQL/Prisma), and `frontend/` (React/TypeScript).
+5. **Shelf communication:** The ESP32 and the backend talk only over MQTT (Mosquitto). Topics and payloads are specified in `docs/mqtt-protocol.md`; firmware and `backend/src/modules/shelf/` must follow it.
 
 ## Hardware Pinout (ESP32-DevKitC - Custom PCB)
 - **LED Strip (WS2812B via 3.3V->5V level shifter + 330R resistor):** `GPIO 13`

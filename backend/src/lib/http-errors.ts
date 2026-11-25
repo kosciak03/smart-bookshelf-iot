@@ -14,6 +14,7 @@ export type ErrorCode =
   | "ISBN_NOT_FOUND"
   | "ISBN_CONFLICT"
   | "SLOT_CONFLICT"
+  | "RFID_CONFLICT"
   | "CONFLICT"
   | "PAYLOAD_TOO_LARGE"
   | "METADATA_SOURCE_UNAVAILABLE"
@@ -84,7 +85,7 @@ export class ConflictError extends HttpError {
    * @param code - Specific conflict code.
    * @param message - Human-readable description.
    */
-  constructor(code: Extract<ErrorCode, "ISBN_CONFLICT" | "SLOT_CONFLICT" | "CONFLICT">, message: string) {
+  constructor(code: Extract<ErrorCode, "ISBN_CONFLICT" | "SLOT_CONFLICT" | "RFID_CONFLICT" | "CONFLICT">, message: string) {
     super(409, code, message);
   }
 }
