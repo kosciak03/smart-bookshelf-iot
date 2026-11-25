@@ -12,6 +12,21 @@ import { z } from "zod";
 dotenv.config({ quiet: true });
 
 /**
+ * Checks whether a string is an IANA time zone known to the runtime.
+ *
+ * @param zone - Time zone name, e.g. `Europe/Warsaw`.
+ * @returns `true` when `Intl` accepts the zone.
+ */
+function isValidTimeZone(zone: string): boolean {
+  try {
+    new Intl.DateTimeFormat("en", { timeZone: zone });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Schema describing every environment variable used by the backend.
  */
 const envSchema = z.object({
@@ -40,6 +55,14 @@ const envSchema = z.object({
   ISBN_NEGATIVE_CACHE_TTL_SECONDS: z.coerce.number().int().positive().default(600),
   /** Maximum number of cached ISBN lookups. */
   ISBN_CACHE_MAX_ENTRIES: z.coerce.number().int().positive().default(500),
+  /**
+   * IANA time zone of the library owner; reading statistics group finished
+   * books by calendar month and year in this zone.
+   */
+  APP_TIMEZONE: z
+    .string()
+    .default("Europe/Warsaw")
+    .refine(isValidTimeZone, { message: "Unknown IANA time zone (e.g. Europe/Warsaw)" }),
 });
 
 /** Strongly typed, validated application configuration. */

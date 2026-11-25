@@ -4,8 +4,8 @@
  * the details manually. `?mode=manual` opens the manual form, `&isbn=` fills
  * in the ISBN (used when a lookup finds nothing).
  */
-import { ArrowLeft, Search } from 'lucide-react'
-import { useState, type FormEvent } from 'react'
+import { ArrowLeft, ScanBarcode, Search } from 'lucide-react'
+import { lazy, Suspense, useCallback, useState, type FormEvent } from 'react'
 import { Link, useNavigate, useSearchParams } from 'react-router'
 import { BOOK_STATUSES, type BookMetadata, type BookStatus } from '../api/books'
 import { BookCover } from '../components/BookCover'
@@ -14,6 +14,9 @@ import { ErrorMessage, Spinner } from '../components/Feedback'
 import { useCreateBook, useImportBook, useIsbnLookup } from '../hooks/useBooks'
 import { EMPTY_BOOK_FORM, formValuesToCreateInput, type BookFormValues } from '../lib/book-form'
 import { formatIsbn, STATUS_LABELS } from '../lib/labels'
+
+/** Barcode scanner, loaded on first use (the decoder library is large). */
+const BarcodeScanner = lazy(() => import('../components/BarcodeScanner').then((module) => ({ default: module.BarcodeScanner })))
 
 /** Human-readable metadata source. */
 const SOURCE_LABELS: Record<BookMetadata['source'], string> = {
@@ -86,6 +89,7 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
   const [input, setInput] = useState(initialIsbn)
   const [submitted, setSubmitted] = useState<string | null>(initialIsbn || null)
   const [status, setStatus] = useState<BookStatus>('WANT_TO_READ')
+  const [scanning, setScanning] = useState(false)
   const lookup = useIsbnLookup(submitted)
   const importBook = useImportBook()
 
@@ -97,6 +101,14 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
       setSubmitted(value)
     }
   }
+
+  // Stable callbacks: the scanner restarts the camera when they change.
+  const handleScanned = useCallback((isbn: string) => {
+    setScanning(false)
+    setInput(isbn)
+    setSubmitted(isbn)
+  }, [])
+  const closeScanner = useCallback(() => setScanning(false), [])
 
   const handleImport = (metadata: BookMetadata) =>
     importBook.mutate({ isbn: metadata.isbn, status }, { onSuccess: (book) => navigate(`/books/${book.id}`) })
@@ -124,7 +136,20 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
           <Search className="h-4 w-4" aria-hidden="true" />
           Look up
         </button>
+        <button
+          type="button"
+          onClick={() => setScanning(true)}
+          className="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium hover:bg-stone-50"
+        >
+          <ScanBarcode className="h-4 w-4" aria-hidden="true" />
+          Scan barcode
+        </button>
       </form>
+      {scanning && (
+        <Suspense fallback={<Spinner label="Starting the scanner…" />}>
+          <BarcodeScanner onDetected={handleScanned} onClose={closeScanner} />
+        </Suspense>
+      )}
       <p className="text-xs text-stone-500">
         The ISBN is printed on the back cover above the barcode. Book data comes from Google Books or Open Library.
       </p>

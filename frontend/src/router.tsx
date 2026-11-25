@@ -9,6 +9,7 @@ import { BookDetailsPage } from './pages/BookDetailsPage'
 import { EditBookPage } from './pages/EditBookPage'
 import { LibraryPage } from './pages/LibraryPage'
 import { NotFoundPage } from './pages/NotFoundPage'
+import { StatsPage } from './pages/StatsPage'
 
 /** Application routes (shared by the browser router and the tests). */
 export const routes: RouteObject[] = [
@@ -19,6 +20,7 @@ export const routes: RouteObject[] = [
       { path: 'books/new', element: <AddBookPage /> },
       { path: 'books/:id', element: <BookDetailsPage /> },
       { path: 'books/:id/edit', element: <EditBookPage /> },
+      { path: 'stats', element: <StatsPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],
   },

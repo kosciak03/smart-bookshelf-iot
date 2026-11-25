@@ -2,7 +2,7 @@
  * @packageDocumentation
  * Application shell: top navigation bar and page container.
  */
-import { BookPlus, Library } from 'lucide-react'
+import { BookPlus, ChartColumn, Library } from 'lucide-react'
 import { NavLink, Outlet } from 'react-router'
 import { HealthIndicator } from './HealthIndicator'
 
@@ -36,6 +36,10 @@ export function Layout() {
             <NavLink to="/books/new" className={navLinkClasses}>
               <BookPlus className="h-4 w-4" aria-hidden="true" />
               Add book
+            </NavLink>
+            <NavLink to="/stats" className={navLinkClasses}>
+              <ChartColumn className="h-4 w-4" aria-hidden="true" />
+              Stats
             </NavLink>
           </nav>
           <HealthIndicator variant="compact" />

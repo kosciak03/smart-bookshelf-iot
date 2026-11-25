@@ -1,7 +1,7 @@
 /**
  * @packageDocumentation
  * TanStack Query hooks for the book catalogue. Queries are cached by key and
- * every successful mutation invalidates the cached book lists and details.
+ * every successful mutation invalidates the cached book lists and statistics.
  */
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
@@ -71,6 +71,7 @@ function useBookCacheUpdater() {
   const queryClient = useQueryClient()
   return (book: Book) => {
     queryClient.setQueryData(bookKeys.detail(book.id), book)
+    void queryClient.invalidateQueries({ queryKey: ['stats'] })
     return queryClient.invalidateQueries({ queryKey: ['books', 'list'] })
   }
 }
@@ -104,6 +105,7 @@ export function useDeleteBook() {
     mutationFn: deleteBook,
     onSuccess: (_result, id) => {
       queryClient.removeQueries({ queryKey: bookKeys.detail(id) })
+      void queryClient.invalidateQueries({ queryKey: ['stats'] })
       return queryClient.invalidateQueries({ queryKey: ['books', 'list'] })
     },
   })

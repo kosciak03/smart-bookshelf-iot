@@ -40,6 +40,7 @@ const ENDPOINTS: EndpointInfo[] = [
   { method: "DELETE", path: "/api/books/:id", description: "Delete a book" },
   { method: "POST", path: "/api/books/import", description: "Create a book from ISBN metadata ({ isbn, ...overrides })" },
   { method: "GET", path: "/api/isbn/:isbn", description: "Look up book metadata by ISBN (Google Books, Open Library)" },
+  { method: "GET", path: "/api/stats", description: "Reading statistics (query: year)" },
 ];
 
 /** Router exposing `GET /` (mounted under `/api`). */
