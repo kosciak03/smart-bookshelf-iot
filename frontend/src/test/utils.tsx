@@ -7,6 +7,7 @@ import { render } from '@testing-library/react'
 import { createMemoryRouter, RouterProvider } from 'react-router'
 import { vi } from 'vitest'
 import type { Book } from '../api/books'
+import type { ShelfSlot, ShelfState } from '../api/shelf'
 import { routes } from '../router'
 
 /** A recorded API call. */
@@ -40,8 +41,12 @@ export function mockApi(handler: ApiHandler): RecordedRequest[] {
       if (request.url === '/api/health') {
         return Response.json({ status: 'ok', database: 'up', databaseLatencyMs: 1, uptimeSeconds: 1, timestamp: '' })
       }
-      requests.push(request)
-      const [status, body] = handler(request) ?? [404, { error: { code: 'NOT_FOUND', message: 'Not found' } }]
+      // Background shelf polling is answered with an empty shelf unless the test handles it.
+      const isShelfPoll = request.method === 'GET' && request.url === '/api/shelf'
+      const answer = handler(request)
+      if (isShelfPoll && answer === undefined) return Response.json({ data: makeShelf([]) })
+      if (!isShelfPoll) requests.push(request)
+      const [status, body] = answer ?? [404, { error: { code: 'NOT_FOUND', message: 'Not found' } }]
       return status === 204 ? new Response(null, { status }) : Response.json(body, { status })
     }),
   )
@@ -104,4 +109,46 @@ export function makeBook(overrides: Partial<Book> = {}): Book {
  */
 export function page(books: Book[]) {
   return { data: books, meta: { page: 1, pageSize: 24, total: books.length, totalPages: books.length > 0 ? 1 : 0 } }
+}
+
+/**
+ * Builds a shelf state with the given slots (11 white/off LEDs by default).
+ *
+ * @param slots - Slots of shelf 1.
+ */
+export function makeShelf(slots: ShelfSlot[]): ShelfState {
+  return {
+    shelfNumber: 1,
+    device: { online: true, lastSeen: '2026-11-28T10:00:00.000Z', rssi: -55 },
+    broker: { connected: true },
+    slots,
+    leds: {
+      version: 1,
+      pixels: Array.from({ length: 11 }, (_, index) => ({ color: index % 2 === 0 ? '#FFFFFF' : '#000000', effect: 'solid' as const })),
+    },
+    pendingTag: null,
+    expected: null,
+  }
+}
+
+/**
+ * Builds a shelf slot.
+ *
+ * @param slotNumber - Slot number (1-based).
+ * @param overrides - Fields to change.
+ */
+export function makeSlot(slotNumber: number, overrides: Partial<ShelfSlot> = {}): ShelfSlot {
+  return {
+    id: `00000000-0000-4000-8000-00000000010${slotNumber}`,
+    slotNumber,
+    fsrChannel: slotNumber - 1,
+    ledStartIdx: 2 * slotNumber - 1,
+    ledEndIdx: 2 * slotNumber - 1,
+    isOccupied: false,
+    isHighlighted: false,
+    highlight: null,
+    highlightUntil: null,
+    book: null,
+    ...overrides,
+  }
 }

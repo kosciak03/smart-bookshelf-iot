@@ -1,15 +1,20 @@
 /**
  * @packageDocumentation
- * Library view (`/`): searchable, filterable grid of all books.
+ * Library view (`/`): the live shelf strip, search, filters and the grid of
+ * all books.
  */
-import { BookPlus } from 'lucide-react'
+import { Plus } from 'lucide-react'
 import { Link } from 'react-router'
 import { BookCard } from '../components/BookCard'
 import { EmptyState, ErrorMessage, Spinner } from '../components/Feedback'
 import { LibraryToolbar } from '../components/LibraryToolbar'
 import { Pagination } from '../components/Pagination'
+import { ShelfStrip } from '../components/ShelfStrip'
 import { useBookList } from '../hooks/useBooks'
 import { useLibraryFilters } from '../hooks/useLibraryFilters'
+
+/** Filter changes that reset every filter. */
+const CLEAR_FILTERS = { q: undefined, status: undefined, location: undefined, minRating: undefined, tag: undefined }
 
 /**
  * Renders the library page. Its state lives in the URL (see `useLibraryFilters`).
@@ -20,12 +25,12 @@ export function LibraryPage() {
   const filtered = Boolean(params.q || params.status || params.location || params.minRating || params.tag)
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="font-serif text-2xl font-bold">My books</h1>
+          <h1 className="em text-3xl">Library</h1>
           {data && (
-            <p className="text-sm text-stone-600" aria-live="polite">
+            <p className="text-muted" aria-live="polite">
               {data.meta.total} {data.meta.total === 1 ? 'book' : 'books'}
               {filtered ? ' match your filters' : ' in your library'}
               {isFetching && ' · updating…'}
@@ -34,12 +39,14 @@ export function LibraryPage() {
         </div>
         <Link
           to="/books/new"
-          className="inline-flex items-center gap-2 rounded-md bg-leaf px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-leaf-dark"
+          className="hidden h-11 items-center gap-2 rounded-[var(--radius-ui)] bg-accent px-4 font-medium text-on-accent hover:bg-accent-hover sm:inline-flex"
         >
-          <BookPlus className="h-4 w-4" aria-hidden="true" />
+          <Plus className="h-4 w-4" aria-hidden="true" />
           Add book
         </Link>
       </div>
+
+      <ShelfStrip />
 
       <LibraryToolbar params={params} onChange={update} />
 
@@ -56,11 +63,11 @@ export function LibraryPage() {
       {data && data.data.length === 0 && (
         <EmptyState title={filtered ? 'No books match your filters' : 'Your library is empty'}>
           {filtered ? (
-            <button type="button" className="text-leaf-dark underline" onClick={() => update({ q: undefined, status: undefined, location: undefined, minRating: undefined, tag: undefined })}>
+            <button type="button" className="text-ink underline" onClick={() => update(CLEAR_FILTERS)}>
               Clear filters
             </button>
           ) : (
-            <Link to="/books/new" className="text-leaf-dark underline">
+            <Link to="/books/new" className="text-ink underline">
               Add your first book
             </Link>
           )}
@@ -69,7 +76,9 @@ export function LibraryPage() {
 
       {data && data.data.length > 0 && (
         <>
-          <div className={`grid grid-cols-2 gap-x-5 gap-y-8 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 ${isFetching ? 'opacity-70' : ''}`}>
+          <div
+            className={`grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 md:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 ${isFetching ? 'opacity-70' : ''}`}
+          >
             {data.data.map((book) => (
               <BookCard key={book.id} book={book} />
             ))}

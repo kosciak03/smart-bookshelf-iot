@@ -1,16 +1,17 @@
 /**
  * @packageDocumentation
- * Book details view (`/books/:id`).
+ * Book page (`/books/:id`): cover with rating, progress, status and shelf card
+ * on the left; title, author, details and description on the right. On phones
+ * the cover sits next to the title and the controls follow below.
  */
 import { ArrowLeft, Pencil, Trash } from 'lucide-react'
 import { Link, useNavigate, useParams } from 'react-router'
 import { ApiError } from '../api/client'
-import { LocationBadge, StatusBadge } from '../components/BookBadges'
 import { BookCover } from '../components/BookCover'
+import { ProgressCard, RatingCard, ShelfCard, StatusControl } from '../components/BookControls'
 import { EmptyState, ErrorMessage, Spinner } from '../components/Feedback'
-import { ReadingPanel } from '../components/ReadingPanel'
 import { useBook, useDeleteBook } from '../hooks/useBooks'
-import { formatDate, formatIsbn } from '../lib/labels'
+import { formatDate, formatIsbn, STATUS_DOT_CLASSES, STATUS_LABELS } from '../lib/labels'
 
 /**
  * Renders the details of one book with reading controls, edit and delete.
@@ -25,8 +26,8 @@ export function BookDetailsPage() {
   if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
     return (
       <EmptyState title="Book not found">
-        <Link to="/" className="text-leaf-dark underline">
-          Back to my books
+        <Link to="/" className="text-ink underline">
+          Back to the library
         </Link>
       </EmptyState>
     )
@@ -38,92 +39,93 @@ export function BookDetailsPage() {
     remove.mutate(book.id, { onSuccess: () => navigate('/', { replace: true }) })
   }
 
-  const details: Array<[string, string | null]> = [
-    ['Publisher', book.publisher],
-    ['Published', book.publishedYear?.toString() ?? null],
-    ['Pages', book.pageCount?.toString() ?? null],
-    ['ISBN', book.isbn ? formatIsbn(book.isbn) : null],
-    ['Added', formatDate(book.createdAt)],
-  ]
+  const meta = [
+    book.publisher,
+    book.publishedYear?.toString(),
+    book.pageCount !== null ? `${book.pageCount} pages` : null,
+    book.isbn ? `ISBN ${formatIsbn(book.isbn)}` : null,
+    `Added ${formatDate(book.createdAt)}`,
+  ].filter((entry): entry is string => Boolean(entry))
 
   return (
-    <div className="space-y-6">
-      <Link to="/" className="inline-flex items-center gap-1 text-sm text-stone-600 hover:text-bark">
-        <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-        My books
-      </Link>
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <Link to="/" className="inline-flex h-10 items-center gap-1 text-muted hover:text-ink">
+          <ArrowLeft className="h-4 w-4" aria-hidden="true" />
+          Library
+        </Link>
+        <div className="flex gap-2">
+          <Link
+            to={`/books/${book.id}/edit`}
+            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-3 hover:bg-raised"
+          >
+            <Pencil className="h-4 w-4" aria-hidden="true" />
+            Edit details
+          </Link>
+          <button
+            type="button"
+            onClick={handleDelete}
+            disabled={remove.isPending}
+            className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-danger hover:bg-danger-soft disabled:opacity-60"
+          >
+            <Trash className="h-4 w-4" aria-hidden="true" />
+            {remove.isPending ? 'Deleting…' : 'Delete'}
+          </button>
+        </div>
+      </div>
+      {remove.error && <ErrorMessage error={remove.error} />}
 
-      <div className="grid gap-8 md:grid-cols-[200px_1fr]">
-        <div className="mx-auto w-40 md:w-full">
-          <BookCover title={book.title} author={book.author} coverUrl={book.coverUrl} />
+      <div className="book-layout">
+        <div className="area-cover">
+          <BookCover title={book.title} author={book.author} coverUrl={book.coverUrl} size="lg" />
         </div>
 
-        <div className="space-y-6">
-          <header className="space-y-2">
-            <h1 className="font-serif text-3xl font-bold leading-tight">{book.title}</h1>
-            <p className="text-lg text-stone-700">by {book.author}</p>
-            <div className="flex flex-wrap items-center gap-3">
-              <StatusBadge status={book.status} />
-              <LocationBadge book={book} />
-            </div>
-          </header>
+        <header className="area-title min-w-0 space-y-1.5">
+          <p className="inline-flex items-center gap-1.5 text-[13px] text-muted">
+            <span className={`h-2 w-2 rounded-full ${STATUS_DOT_CLASSES[book.status]}`} aria-hidden="true" />
+            {STATUS_LABELS[book.status]}
+          </p>
+          <h1 className="em text-2xl leading-tight md:text-4xl">{book.title}</h1>
+          <p className="em text-muted md:text-lg">{book.author}</p>
+        </header>
 
-          <ReadingPanel book={book} />
+        <div className="area-controls space-y-3">
+          <RatingCard book={book} />
+          <ProgressCard book={book} />
+          <StatusControl book={book} />
+          <ShelfCard book={book} />
+        </div>
 
-          {book.description && (
-            <section>
-              <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">Description</h2>
-              <p className="whitespace-pre-line text-sm leading-relaxed text-stone-800">{book.description}</p>
+        <div className="area-details min-w-0 space-y-5">
+          <p className="flex flex-wrap gap-x-4 gap-y-1 border-y border-line py-2.5 text-[15px] text-muted">
+            {meta.map((entry) => (
+              <span key={entry}>{entry}</span>
+            ))}
+          </p>
+
+          {book.description ? (
+            <section aria-label="Description" className="max-w-2xl space-y-2">
+              <h2 className="text-lg font-bold">About this book</h2>
+              <p className="whitespace-pre-line text-[17px] leading-relaxed">{book.description}</p>
             </section>
+          ) : (
+            <p className="text-muted">No description yet.</p>
           )}
 
-          <section>
-            <h2 className="mb-2 text-sm font-semibold uppercase tracking-wide text-stone-500">Book details</h2>
-            <dl className="grid grid-cols-[auto_1fr] gap-x-6 gap-y-1 text-sm">
-              {details
-                .filter((entry): entry is [string, string] => entry[1] !== null)
-                .map(([label, value]) => (
-                  <div key={label} className="contents">
-                    <dt className="text-stone-500">{label}</dt>
-                    <dd>{value}</dd>
-                  </div>
-                ))}
-            </dl>
-            {book.tags.length > 0 && (
-              <ul className="mt-3 flex flex-wrap gap-2" aria-label="Tags">
-                {book.tags.map((tag) => (
-                  <li key={tag}>
-                    <Link
-                      to={`/?tag=${encodeURIComponent(tag)}`}
-                      className="rounded-full bg-bark/10 px-2.5 py-1 text-xs text-bark hover:bg-bark/20"
-                    >
-                      {tag}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </section>
-
-          <div className="flex flex-wrap gap-3 border-t border-stone-200 pt-4">
-            <Link
-              to={`/books/${book.id}/edit`}
-              className="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm hover:bg-stone-50"
-            >
-              <Pencil className="h-4 w-4" aria-hidden="true" />
-              Edit details
-            </Link>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={remove.isPending}
-              className="inline-flex items-center gap-2 rounded-md border border-red-200 bg-white px-4 py-2 text-sm text-red-700 hover:bg-red-50 disabled:opacity-60"
-            >
-              <Trash className="h-4 w-4" aria-hidden="true" />
-              {remove.isPending ? 'Deleting…' : 'Delete'}
-            </button>
-          </div>
-          {remove.error && <ErrorMessage error={remove.error} />}
+          {book.tags.length > 0 && (
+            <ul className="flex flex-wrap gap-2" aria-label="Tags">
+              {book.tags.map((tag) => (
+                <li key={tag}>
+                  <Link
+                    to={`/?tag=${encodeURIComponent(tag)}`}
+                    className="inline-flex h-8 items-center rounded-[var(--radius-ui)] border border-line px-2.5 text-[14px] hover:bg-raised"
+                  >
+                    {tag}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       </div>
     </div>

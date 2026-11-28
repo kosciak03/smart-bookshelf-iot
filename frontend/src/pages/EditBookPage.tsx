@@ -32,13 +32,13 @@ export function EditBookPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link to={`/books/${id}`} className="inline-flex items-center gap-1 text-sm text-stone-600 hover:text-bark">
+      <Link to={`/books/${id}`} className="inline-flex items-center gap-1 text-[15px] text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         Back to the book
       </Link>
-      <h1 className="font-serif text-2xl font-bold">Edit “{book.title}”</h1>
+      <h1 className="em text-3xl">Edit “{book.title}”</h1>
       {update.error && update.error.details.length === 0 && <ErrorMessage error={update.error} />}
-      <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+      <div className="rounded-[var(--radius-ui)] border border-line bg-surface p-6 ">
         <BookForm
           initialValues={bookToFormValues(book)}
           onSubmit={handleSubmit}
@@ -46,7 +46,7 @@ export function EditBookPage() {
           submitting={update.isPending}
           serverErrors={update.error?.fieldErrors()}
           actions={
-            <Link to={`/books/${id}`} className="text-sm text-stone-600 hover:underline">
+            <Link to={`/books/${id}`} className="text-[15px] text-muted hover:underline">
               Cancel
             </Link>
           }

@@ -47,13 +47,13 @@ export function AddBookPage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
-      <Link to="/" className="inline-flex items-center gap-1 text-sm text-stone-600 hover:text-bark">
+      <Link to="/" className="inline-flex items-center gap-1 text-[15px] text-muted hover:text-ink">
         <ArrowLeft className="h-4 w-4" aria-hidden="true" />
         My books
       </Link>
-      <h1 className="font-serif text-2xl font-bold">Add a book</h1>
+      <h1 className="em text-3xl">Add a book</h1>
 
-      <div className="flex gap-1 border-b border-stone-300" role="tablist">
+      <div className="flex gap-1 border-b border-line" role="tablist">
         {(['isbn', 'manual'] as const).map((mode) => {
           const active = (mode === 'manual') === manual
           return (
@@ -63,8 +63,8 @@ export function AddBookPage() {
               role="tab"
               aria-selected={active}
               onClick={() => switchTo(mode)}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium ${
-                active ? 'border-bark text-bark' : 'border-transparent text-stone-500 hover:text-bark'
+              className={`-mb-px border-b-2 px-3 py-2 text-[15px] font-medium ${
+                active ? 'border-accent text-ink' : 'border-transparent text-muted hover:text-ink'
               }`}
             >
               {mode === 'isbn' ? 'By ISBN' : 'Manually'}
@@ -118,20 +118,20 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
   return (
     <div className="space-y-6">
       <form onSubmit={handleLookup} className="flex flex-wrap items-end gap-3">
-        <label className="min-w-64 flex-1 text-sm">
-          <span className="font-medium text-stone-700">ISBN</span>
+        <label className="min-w-64 flex-1 text-[15px]">
+          <span className="font-medium text-ink">ISBN</span>
           <input
             value={input}
             onChange={(event) => setInput(event.target.value)}
             placeholder="e.g. 978-83-7578-063-5 or 0132350882"
             inputMode="numeric"
-            className="mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/30"
+            className="mt-1 w-full rounded-[var(--radius-ui)] border border-line bg-surface px-3 py-2 text-[15px] outline-none focus:border-accent focus:ring-2 focus:ring-accent/25"
           />
         </label>
         <button
           type="submit"
           disabled={lookup.isFetching}
-          className="inline-flex items-center gap-2 rounded-md bg-bark px-4 py-2 text-sm font-medium text-white hover:bg-bark-light disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-[var(--radius-ui)] bg-accent px-4 py-2 text-[15px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60"
         >
           <Search className="h-4 w-4" aria-hidden="true" />
           Look up
@@ -139,7 +139,7 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
         <button
           type="button"
           onClick={() => setScanning(true)}
-          className="inline-flex items-center gap-2 rounded-md border border-stone-300 bg-white px-4 py-2 text-sm font-medium hover:bg-stone-50"
+          className="inline-flex items-center gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-4 py-2 text-[15px] font-medium hover:bg-raised"
         >
           <ScanBarcode className="h-4 w-4" aria-hidden="true" />
           Scan barcode
@@ -150,7 +150,7 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
           <BarcodeScanner onDetected={handleScanned} onClose={closeScanner} />
         </Suspense>
       )}
-      <p className="text-xs text-stone-500">
+      <p className="text-[13px] text-muted">
         The ISBN is printed on the back cover above the barcode. Book data comes from Google Books or Open Library.
       </p>
 
@@ -167,15 +167,15 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
       )}
 
       {lookup.data && !lookup.isFetching && (
-        <article className="flex flex-col gap-5 rounded-xl border border-stone-200 bg-white p-5 shadow-sm sm:flex-row">
+        <article className="flex flex-col gap-5 rounded-[var(--radius-ui)] border border-line bg-surface p-5 sm:flex-row">
           <div className="w-28 shrink-0">
             <BookCover title={lookup.data.title} author={lookup.data.author ?? ''} coverUrl={lookup.data.coverUrl} />
           </div>
           <div className="flex-1 space-y-3">
             <div>
-              <h2 className="font-serif text-xl font-bold">{lookup.data.title}</h2>
-              <p className="text-stone-700">{lookup.data.author ? `by ${lookup.data.author}` : 'Author unknown'}</p>
-              <p className="mt-1 text-xs text-stone-500">
+              <h2 className="em text-xl">{lookup.data.title}</h2>
+              <p className="text-ink">{lookup.data.author ? `by ${lookup.data.author}` : 'Author unknown'}</p>
+              <p className="mt-1 text-[13px] text-muted">
                 {[
                   lookup.data.publisher,
                   lookup.data.publishedYear,
@@ -185,9 +185,9 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
                   .filter(Boolean)
                   .join(' · ')}
               </p>
-              <p className="mt-1 text-xs text-stone-400">Source: {SOURCE_LABELS[lookup.data.source]}</p>
+              <p className="mt-1 text-[13px] text-muted">Source: {SOURCE_LABELS[lookup.data.source]}</p>
             </div>
-            {lookup.data.description && <p className="line-clamp-4 text-sm text-stone-700">{lookup.data.description}</p>}
+            {lookup.data.description && <p className="line-clamp-4 text-[15px] text-ink">{lookup.data.description}</p>}
 
             {lookup.data.author === null ? (
               <ErrorMessage error={new Error('The book database has no author for this ISBN.')}>
@@ -197,12 +197,12 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
               </ErrorMessage>
             ) : (
               <div className="flex flex-wrap items-end gap-3">
-                <label className="text-sm">
-                  <span className="block font-medium text-stone-700">Shelf</span>
+                <label className="text-[15px]">
+                  <span className="block font-medium text-ink">Shelf</span>
                   <select
                     value={status}
                     onChange={(event) => setStatus(event.target.value as BookStatus)}
-                    className="mt-1 rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm"
+                    className="mt-1 rounded-[var(--radius-ui)] border border-line bg-surface px-2 py-1.5 text-[15px]"
                   >
                     {BOOK_STATUSES.map((value) => (
                       <option key={value} value={value}>
@@ -215,7 +215,7 @@ function IsbnImport({ initialIsbn, onManual }: { initialIsbn: string; onManual: 
                   type="button"
                   disabled={importBook.isPending}
                   onClick={() => handleImport(lookup.data)}
-                  className="rounded-md bg-leaf px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-leaf-dark disabled:opacity-60"
+                  className="rounded-[var(--radius-ui)] bg-accent px-4 py-2 text-[15px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60"
                 >
                   {importBook.isPending ? 'Adding…' : 'Add to my books'}
                 </button>
@@ -244,7 +244,7 @@ function ManualEntry({ isbn }: { isbn: string }) {
   return (
     <div className="space-y-4">
       {create.error && create.error.details.length === 0 && <ErrorMessage error={create.error} />}
-      <div className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
+      <div className="rounded-[var(--radius-ui)] border border-line bg-surface p-6 ">
         <BookForm
           initialValues={{ ...EMPTY_BOOK_FORM, isbn }}
           onSubmit={handleSubmit}

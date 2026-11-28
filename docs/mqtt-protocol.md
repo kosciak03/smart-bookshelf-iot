@@ -115,16 +115,17 @@ MISPLACED > LOCATE > PUT_BACK > CONFIRMED.
 
 | Input                                    | Effect                                                                                     |
 | ---------------------------------------- | ------------------------------------------------------------------------------------------ |
-| RFID of a known book                     | Its slot blinks PUT_BACK for 60 s. A book without a slot gets the first free slot. The book is expected for 60 s |
+| RFID of a known book                     | Its slot blinks PUT_BACK for 15 s. A book without a slot gets the first free slot. The book is expected for 60 s |
 | FSR occupied in the expected slot        | Book `ON_SHELF`, CONFIRMED for 3 s                                                          |
 | FSR occupied in another slot (expected)  | `MISPLACED` event. That slot blinks red until the book is taken out                         |
 | FSR occupied (nothing expected)          | The slot's assigned book becomes `ON_SHELF`                                                 |
 | FSR empty                                | The slot's book becomes `OFF_SHELF`. LOCATE on that slot ends (the book was found)          |
 | RFID of an unknown tag                   | Kept for 10 min as the *pending tag*, ready to be linked to a book in the web app           |
-| `POST /api/books/:id/locate`             | LOCATE for 60 s                                                                            |
+| `POST /api/books/:id/locate`, `POST /api/shelf/slots/:id/locate` | LOCATE for 15 s (`DELETE /api/shelf/slots/:id/locate` switches it off earlier) |
 
 Every step is stored in `ShelfEvent` (`GET /api/shelf/events`). Timeouts are
-configured with `SHELF_HIGHLIGHT_SECONDS` and `SHELF_EXPECT_SECONDS`.
+configured with `SHELF_HIGHLIGHT_SECONDS` (default 15 s, short to save power) and
+`SHELF_EXPECT_SECONDS` (default 60 s).
 
 ## Trying it without hardware
 

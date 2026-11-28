@@ -1,29 +1,49 @@
 /**
  * @packageDocumentation
- * Small presentational pieces of a book: status badge, location badge and
- * reading progress bar.
+ * Small presentational pieces of a book: status chip, slot chip, location
+ * line and reading progress bar.
  */
 import type { Book, BookStatus, LocationStatus } from '../api/books'
-import { LOCATION_LABELS, progressPercent, STATUS_BADGE_CLASSES, STATUS_LABELS } from '../lib/labels'
+import { LOCATION_LABELS, progressPercent, STATUS_DOT_CLASSES, STATUS_LABELS } from '../lib/labels'
 
 /**
- * Coloured reading-status badge.
+ * Reading-status chip with a coloured dot.
  *
  * @param props.status - Reading status.
  */
 export function StatusBadge({ status }: { status: BookStatus }) {
   return (
-    <span className={`inline-block rounded-full px-2 py-0.5 text-xs font-medium ${STATUS_BADGE_CLASSES[status]}`}>
+    <span className="inline-flex h-6 items-center gap-1.5 rounded-[var(--radius-ui)] border border-line px-2 text-[13px] text-ink">
+      <span className={`h-2 w-2 rounded-full ${STATUS_DOT_CLASSES[status]}`} aria-hidden="true" />
       {STATUS_LABELS[status]}
     </span>
   )
 }
 
-/** Dot colours of the location badge. */
+/**
+ * Chip with the shelf slot number (`S2`), blue while the slot blinks.
+ *
+ * @param props.slotNumber - Slot number.
+ * @param props.blinking - Whether the slot's LED is blinking for "find".
+ */
+export function SlotBadge({ slotNumber, blinking = false }: { slotNumber: number; blinking?: boolean }) {
+  return (
+    <span
+      className={`inline-flex h-6 items-center rounded-[var(--radius-ui)] px-2 text-[13px] font-medium ${
+        blinking ? 'bg-locate text-white' : 'bg-accent-soft text-ink'
+      }`}
+      title={`Shelf slot ${slotNumber}`}
+    >
+      S{slotNumber}
+    </span>
+  )
+}
+
+/** Dot colours of the location line. */
 const LOCATION_DOTS: Record<LocationStatus, string> = {
-  ON_SHELF: 'bg-emerald-500',
-  OFF_SHELF: 'bg-amber-500',
-  UNASSIGNED: 'bg-stone-300',
+  ON_SHELF: 'bg-status-read',
+  OFF_SHELF: 'bg-warn',
+  UNASSIGNED: 'bg-track',
 }
 
 /**
@@ -34,7 +54,7 @@ const LOCATION_DOTS: Record<LocationStatus, string> = {
 export function LocationBadge({ book }: { book: Pick<Book, 'locationStatus' | 'slot'> }) {
   const slot = book.slot ? ` · slot ${book.slot.slotNumber}` : ''
   return (
-    <span className="inline-flex items-center gap-1.5 text-xs text-stone-600">
+    <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
       <span className={`h-2 w-2 rounded-full ${LOCATION_DOTS[book.locationStatus]}`} aria-hidden="true" />
       {LOCATION_LABELS[book.locationStatus]}
       {slot}
@@ -47,24 +67,34 @@ export function LocationBadge({ book }: { book: Pick<Book, 'locationStatus' | 's
  *
  * @param props.pagesRead - Pages read.
  * @param props.pageCount - Total pages, or `null` when unknown.
+ * @param props.size - Bar thickness.
  */
-export function ProgressBar({ pagesRead, pageCount }: { pagesRead: number; pageCount: number | null }) {
+export function ProgressBar({
+  pagesRead,
+  pageCount,
+  size = 'sm',
+}: {
+  pagesRead: number
+  pageCount: number | null
+  size?: 'sm' | 'md'
+}) {
   const percent = progressPercent(pagesRead, pageCount)
-  if (percent === null) return <p className="text-xs text-stone-500">{pagesRead} pages read</p>
+  if (percent === null) return <p className="text-[13px] text-muted">{pagesRead} pages read</p>
+  const height = size === 'sm' ? 'h-1' : 'h-1.5'
   return (
     <div>
       <div
-        className="h-1.5 w-full overflow-hidden rounded-full bg-stone-200"
+        className={`${height} w-full overflow-hidden rounded-full bg-track`}
         role="progressbar"
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
         aria-label="Reading progress"
       >
-        <div className="h-full rounded-full bg-leaf" style={{ width: `${percent}%` }} />
+        <div className={`${height} rounded-full bg-accent`} style={{ width: `${percent}%` }} />
       </div>
-      <p className="mt-1 text-xs text-stone-500">
-        {pagesRead} / {pageCount} pages ({percent}%)
+      <p className="mt-1 text-[13px] text-muted">
+        {pagesRead} / {pageCount} pages · {percent}%
       </p>
     </div>
   )

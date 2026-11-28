@@ -25,7 +25,7 @@ describe('LibraryPage', () => {
     renderApp('/')
 
     const solaris = (await screen.findByRole('heading', { name: 'Solaris' })).closest('article')!
-    expect(within(solaris).getByText('Currently reading')).toBeInTheDocument()
+    expect(within(solaris).getByText('Reading')).toBeInTheDocument()
     expect(within(solaris).getByRole('progressbar')).toHaveAttribute('aria-valuenow', '25')
     expect(within(solaris).getByRole('img', { name: 'Rated 4 out of 5' })).toBeInTheDocument()
     expect(screen.getByText('2 books in your library')).toBeInTheDocument()
@@ -38,7 +38,7 @@ describe('LibraryPage', () => {
     await screen.findByText('No books match your filters')
     expect(requests.at(-1)?.url).toBe('/api/books?pageSize=24&minRating=4')
 
-    await userEvent.click(screen.getByRole('button', { name: 'Currently reading' }))
+    await userEvent.click(within(screen.getByRole('navigation', { name: 'Reading status' })).getByRole('button', { name: 'Reading' }))
     await waitFor(() => expect(requests.at(-1)?.url).toBe('/api/books?pageSize=24&status=READING&minRating=4'))
     expect(router.state.location.search).toBe('?minRating=4&status=READING')
   })
@@ -76,10 +76,10 @@ describe('BookDetailsPage', () => {
     })
     renderApp(`/books/${book.id}`)
 
-    const pages = await screen.findByRole('spinbutton', { name: 'Pages read' })
+    const pages = await screen.findByRole('spinbutton', { name: "I'm on page" })
     await userEvent.clear(pages)
     await userEvent.type(pages, '204')
-    await userEvent.click(screen.getByRole('button', { name: 'Update progress' }))
+    await userEvent.click(screen.getByRole('button', { name: 'Save' }))
 
     await waitFor(() => expect(screen.getByRole('button', { name: /^Read$/ })).toHaveAttribute('aria-pressed', 'true'))
     expect(requests.find((request) => request.method === 'PATCH')?.body).toEqual({ pagesRead: 204 })

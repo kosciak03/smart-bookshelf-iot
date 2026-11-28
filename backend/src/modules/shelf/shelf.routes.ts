@@ -7,7 +7,10 @@
  * | ------ | -------------------- | ----------------------------------------- |
  * | GET    | `/`                  | `{ data: ShelfState }` (query: `shelf`)   |
  * | GET    | `/events`            | `{ data: ShelfEvent[] }` (query: `shelf`, `limit`) |
+ * | GET    | `/stream`            | Server-Sent Events: `event: shelf` on every change |
  * | POST   | `/highlights/clear`  | 204 (query: `shelf`)                      |
+ * | POST   | `/slots/:id/locate`  | `{ data: { slot } }` – blink the slot (also empty) |
+ * | DELETE | `/slots/:id/locate`  | 204 – switch the blinking off early       |
  *
  * Mounted under `/api/books` (shelf actions on a book):
  * | Method | Path          | Body                    | Response                          |
@@ -22,7 +25,7 @@ import { prisma } from "../../lib/prisma.js";
 import { parseRequest } from "../../lib/validate.js";
 import { bookIdParamsSchema } from "../books/book.schemas.js";
 import { rfidScanSchema } from "./shelf.protocol.js";
-import { shelfService } from "./shelf.service.js";
+import { shelfService, type ShelfChange } from "./shelf.service.js";
 
 /** Optional `shelf` query parameter (defaults to the single prototype shelf). */
 const shelfQuerySchema = z.strictObject({
@@ -44,6 +47,14 @@ const assignRfidSchema = z.strictObject({
   uid: rfidScanSchema.shape.uid.nullable(),
 });
 
+/** Route parameters of `/api/shelf/slots/:id/...`. */
+const slotIdParamsSchema = z.object({
+  id: z.uuid({ message: "Slot id must be a valid UUID" }),
+});
+
+/** Interval of SSE comments that keep proxies from closing an idle stream (ms). */
+const SSE_HEARTBEAT_MS = 25_000;
+
 /** Router for `/api/shelf`. */
 export const shelfRouter: Router = Router();
 
@@ -64,6 +75,44 @@ shelfRouter.get("/events", async (req, res) => {
     },
   });
   res.json({ data: events });
+});
+
+/**
+ * Live change notifications for the web app (Server-Sent Events). Each event
+ * only says *that* something changed (`{ shelfNumber, reason }`); the client
+ * then re-fetches the shelf state and book lists.
+ */
+shelfRouter.get("/stream", (req, res) => {
+  res.set({
+    "Content-Type": "text/event-stream",
+    "Cache-Control": "no-cache, no-transform",
+    Connection: "keep-alive",
+    "X-Accel-Buffering": "no",
+  });
+  res.flushHeaders();
+  res.write("retry: 3000\n\n");
+
+  const onChange = (change: ShelfChange) => {
+    res.write(`event: shelf\ndata: ${JSON.stringify(change)}\n\n`);
+  };
+  shelfService.on("change", onChange);
+  const heartbeat = setInterval(() => res.write(": ping\n\n"), SSE_HEARTBEAT_MS);
+
+  req.on("close", () => {
+    clearInterval(heartbeat);
+    shelfService.off("change", onChange);
+  });
+});
+
+shelfRouter.post("/slots/:id/locate", async (req, res) => {
+  const { id } = parseRequest(slotIdParamsSchema, req.params, "params");
+  res.json({ data: { slot: await shelfService.locateSlot(id) } });
+});
+
+shelfRouter.delete("/slots/:id/locate", async (req, res) => {
+  const { id } = parseRequest(slotIdParamsSchema, req.params, "params");
+  await shelfService.stopLocate(id);
+  res.status(204).end();
 });
 
 shelfRouter.post("/highlights/clear", async (req, res) => {

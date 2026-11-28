@@ -24,7 +24,7 @@ export interface BookFormProps {
 
 /** Classes of text inputs. */
 const INPUT_CLASSES =
-  'mt-1 w-full rounded-md border border-stone-300 bg-white px-3 py-2 text-sm outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/30 aria-[invalid=true]:border-red-400'
+  'mt-1 w-full rounded-[var(--radius-ui)] border border-line bg-surface px-3 py-2 text-[15px] outline-none focus:border-accent focus:ring-2 focus:ring-accent/25 aria-[invalid=true]:border-danger'
 
 /**
  * Renders the book form with client-side validation and server error display.
@@ -59,9 +59,9 @@ export function BookForm({
     const id = `book-${name}`
     return (
       <div>
-        <label htmlFor={id} className="text-sm font-medium text-stone-700">
+        <label htmlFor={id} className="text-[15px] font-medium text-ink">
           {label}
-          {options.required && <span className="text-red-600"> *</span>}
+          {options.required && <span className="text-danger"> *</span>}
         </label>
         <input
           id={id}
@@ -75,7 +75,7 @@ export function BookForm({
           className={INPUT_CLASSES}
         />
         {error && (
-          <p id={`${id}-error`} className="mt-1 text-xs text-red-700">
+          <p id={`${id}-error`} className="mt-1 text-[13px] text-danger">
             {error}
           </p>
         )}
@@ -99,7 +99,7 @@ export function BookForm({
       </div>
 
       <div>
-        <label htmlFor="book-description" className="text-sm font-medium text-stone-700">
+        <label htmlFor="book-description" className="text-[15px] font-medium text-ink">
           Description
         </label>
         <textarea
@@ -109,12 +109,12 @@ export function BookForm({
           onChange={(event) => set('description')(event.target.value)}
           className={INPUT_CLASSES}
         />
-        {descriptionError && <p className="mt-1 text-xs text-red-700">{descriptionError}</p>}
+        {descriptionError && <p className="mt-1 text-[13px] text-danger">{descriptionError}</p>}
       </div>
 
       {showStatus && (
         <div>
-          <label htmlFor="book-status" className="text-sm font-medium text-stone-700">
+          <label htmlFor="book-status" className="text-[15px] font-medium text-ink">
             Shelf
           </label>
           <select
@@ -136,7 +136,7 @@ export function BookForm({
         <button
           type="submit"
           disabled={submitting}
-          className="rounded-md bg-leaf px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-leaf-dark disabled:opacity-60"
+          className="rounded-[var(--radius-ui)] bg-accent px-5 py-2 text-[15px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60"
         >
           {submitting ? 'Saving…' : submitLabel}
         </button>

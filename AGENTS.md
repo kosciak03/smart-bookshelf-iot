@@ -27,4 +27,4 @@
 ## Coding Standards
 - **Firmware (C++ / PlatformIO):** Avoid blocking `delay()` in the main loop; use `millis()` state machines. Use `ArduinoJson` for serialization.
 - **Backend (TypeScript):** Strict mode enabled (`"strict": true`). Validate all incoming payloads with `zod`.
-- **Frontend (React + TypeScript):** Functional components, Tailwind CSS, clean Goodreads-inspired UI.
+- **Frontend (React + TypeScript):** Functional components, Tailwind CSS. Features follow a typical reading tracker (shelves *want to read / reading / read*, progress, ratings, statistics), but the visual identity is our own and must not copy any existing product: Alegreya Sans (bold italic only for book titles, authors and page names), warm greys with a graphite accent, light/dark/Auto theme, technical IoT character with the live shelf (LED strip, slots) in the UI. Fully responsive (phones), touch targets ≥ 44 px.

@@ -11,7 +11,7 @@ import { EmptyState } from '../components/Feedback'
 export function NotFoundPage() {
   return (
     <EmptyState title="Page not found">
-      <Link to="/" className="text-leaf-dark underline">
+      <Link to="/" className="text-ink underline">
         Go to my books
       </Link>
     </EmptyState>

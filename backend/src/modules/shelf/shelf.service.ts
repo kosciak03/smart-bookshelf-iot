@@ -10,7 +10,7 @@
  *   slot confirms (short solid green, book `ON_SHELF`); placing it in another
  *   slot records `MISPLACED` and blinks that slot red until the book is taken
  *   out again.
- * - *Find a book*: `locateBook()` blinks the slot blue until the book is taken
+ * - *Find a book*: `locateBook()` / `locateSlot()` blink the slot blue until the book is taken
  *   out or the highlight times out.
  * - *Take a book*: the FSR reports the slot empty → book `OFF_SHELF`.
  * - *Unknown tag*: the UID is kept as a pending tag so the user can link it to
@@ -82,6 +82,8 @@ export interface SlotState {
   isHighlighted: boolean;
   /** Strongest active highlight, `null` when the slot is dark. */
   highlight: HighlightReason | null;
+  /** When the strongest highlight switches itself off (`null`: no highlight or no timeout). */
+  highlightUntil: Date | null;
   book: { id: string; title: string; author: string; coverUrl: string | null; locationStatus: string } | null;
 }
 
@@ -97,6 +99,15 @@ export interface ShelfState {
   pendingTag: PendingTag | null;
   /** Book the shelf waits for after an RFID scan. */
   expected: { bookId: string; slotId: string; until: Date } | null;
+}
+
+/** A slot lit by LOCATE. */
+export interface LocatedSlot {
+  id: string;
+  shelfNumber: number;
+  slotNumber: number;
+  /** When the light switches itself off. */
+  until: Date;
 }
 
 /** Change notification emitted after every state change (used by the SSE stream). */
@@ -352,7 +363,7 @@ export class ShelfService extends EventEmitter<{ change: [ShelfChange] }> {
    * @returns The lit slot.
    * @throws {@link NotFoundError} for an unknown book; {@link ConflictError} when it has no slot.
    */
-  locateBook(bookId: string): Promise<{ id: string; shelfNumber: number; slotNumber: number }> {
+  locateBook(bookId: string): Promise<LocatedSlot> {
     return this.enqueue(async () => {
       const book = await prisma.book.findUnique({
         where: { id: bookId },
@@ -360,13 +371,65 @@ export class ShelfService extends EventEmitter<{ change: [ShelfChange] }> {
       });
       if (book === null) throw new NotFoundError("Book", bookId);
       if (book.slot === null) throw new ConflictError("CONFLICT", "This book has no shelf slot; assign one first");
-
-      this.addHighlight(book.slot.id, "LOCATE", this.now() + this.config.highlightMs);
-      await this.recordEvent(prisma, "HIGHLIGHT_ON", { slotId: book.slot.id, bookId, payload: { reason: "LOCATE" } });
-      await this.publishLeds(book.slot.shelfNumber);
-      this.emit("change", { shelfNumber: book.slot.shelfNumber, reason: "highlight" });
-      return book.slot;
+      return this.startLocate(book.slot, bookId);
     });
+  }
+
+  /**
+   * Lights a slot directly (also an empty one), e.g. from the shelf strip in
+   * the web app.
+   *
+   * @param slotId - Slot id.
+   * @returns The lit slot and when the light switches itself off.
+   * @throws {@link NotFoundError} for an unknown slot.
+   */
+  locateSlot(slotId: string): Promise<LocatedSlot> {
+    return this.enqueue(async () => {
+      const slot = await prisma.shelfSlot.findUnique({
+        where: { id: slotId },
+        select: { id: true, shelfNumber: true, slotNumber: true, book: { select: { id: true } } },
+      });
+      if (slot === null) throw new NotFoundError("Shelf slot", slotId);
+      return this.startLocate(slot, slot.book?.id ?? null);
+    });
+  }
+
+  /**
+   * Switches off the LOCATE light of a slot before its timeout.
+   *
+   * @param slotId - Slot id.
+   * @throws {@link NotFoundError} for an unknown slot.
+   */
+  stopLocate(slotId: string): Promise<void> {
+    return this.enqueue(async () => {
+      const slot = await prisma.shelfSlot.findUnique({
+        where: { id: slotId },
+        select: { id: true, shelfNumber: true, book: { select: { id: true } } },
+      });
+      if (slot === null) throw new NotFoundError("Shelf slot", slotId);
+      if (!this.hasHighlight(slot.id, "LOCATE")) return;
+      this.removeHighlight(slot.id, "LOCATE");
+      await this.recordEvent(prisma, "HIGHLIGHT_OFF", {
+        slotId: slot.id,
+        bookId: slot.book?.id ?? null,
+        payload: { reason: "LOCATE", cause: "cancelled" },
+      });
+      await this.publishLeds(slot.shelfNumber);
+      this.emit("change", { shelfNumber: slot.shelfNumber, reason: "highlight" });
+    });
+  }
+
+  /** Lights a slot with LOCATE (runs inside the queue). */
+  private async startLocate(
+    slot: { id: string; shelfNumber: number; slotNumber: number },
+    bookId: string | null,
+  ): Promise<LocatedSlot> {
+    const until = this.now() + this.config.highlightMs;
+    this.addHighlight(slot.id, "LOCATE", until);
+    await this.recordEvent(prisma, "HIGHLIGHT_ON", { slotId: slot.id, bookId, payload: { reason: "LOCATE" } });
+    await this.publishLeds(slot.shelfNumber);
+    this.emit("change", { shelfNumber: slot.shelfNumber, reason: "highlight" });
+    return { id: slot.id, shelfNumber: slot.shelfNumber, slotNumber: slot.slotNumber, until: new Date(until) };
   }
 
   /**
@@ -581,7 +644,7 @@ export class ShelfService extends EventEmitter<{ change: [ShelfChange] }> {
         ledEndIdx: slot.ledEndIdx,
         isOccupied: slot.isOccupied,
         isHighlighted: slot.isHighlighted,
-        highlight: HIGHLIGHT_PRIORITY.find((reason) => this.hasHighlight(slot.id, reason)) ?? null,
+        ...this.strongestHighlight(slot.id),
         book: slot.book,
       })),
       leds: buildLedFrame(
@@ -611,6 +674,14 @@ export class ShelfService extends EventEmitter<{ change: [ShelfChange] }> {
   private touchDevice(shelfNumber: number): void {
     const device = this.devices.get(shelfNumber);
     this.devices.set(shelfNumber, { ...(device ?? {}), online: true, lastSeen: new Date(this.now()) });
+  }
+
+  /** Strongest highlight of a slot and its expiry time. */
+  private strongestHighlight(slotId: string): { highlight: HighlightReason | null; highlightUntil: Date | null } {
+    const reasons = this.highlights.get(slotId);
+    const highlight = HIGHLIGHT_PRIORITY.find((reason) => reasons?.has(reason)) ?? null;
+    const expiresAt = highlight === null ? null : (reasons?.get(highlight) ?? null);
+    return { highlight, highlightUntil: expiresAt === null ? null : new Date(expiresAt) };
   }
 
   private hasHighlight(slotId: string, reason: HighlightReason): boolean {

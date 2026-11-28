@@ -32,13 +32,13 @@ export function SearchBox({ value, onSearch }: { value: string; onSearch: (q: st
   return (
     <label className="relative block">
       <span className="sr-only">Search books</span>
-      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-stone-400" aria-hidden="true" />
+      <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
       <input
         type="search"
         value={text}
         onChange={(event) => setText(event.target.value)}
         placeholder="Search by title, author, ISBN or tag…"
-        className="w-full rounded-full border border-stone-300 bg-white py-2 pl-9 pr-4 text-sm shadow-sm outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/30"
+        className="w-full h-11 rounded-[var(--radius-ui)] border border-line bg-surface pl-9 pr-4 text-[15px] outline-none focus:border-accent focus:ring-2 focus:ring-accent/25"
       />
     </label>
   )
@@ -49,7 +49,7 @@ const SORT_OPTIONS: BookSortField[] = ['createdAt', 'updatedAt', 'title', 'autho
 
 /** Classes of the filter selects. */
 const SELECT_CLASSES =
-  'rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm outline-none focus:border-leaf focus:ring-2 focus:ring-leaf/30'
+  'h-10 rounded-[var(--radius-ui)] border border-line bg-surface px-2 text-[15px] text-ink outline-none focus:border-accent focus:ring-2 focus:ring-accent/25'
 
 /** Props of {@link LibraryToolbar}. */
 export interface LibraryToolbarProps {
@@ -73,7 +73,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
     <div className="space-y-4">
       <SearchBox value={params.q ?? ''} onSearch={handleSearch} />
 
-      <nav className="flex flex-wrap gap-1 border-b border-stone-300" aria-label="Reading status">
+      <nav className="-mx-1 flex gap-1 overflow-x-auto border-b border-line px-1" aria-label="Reading status">
         {[undefined, ...BOOK_STATUSES].map((status) => {
           const active = status === activeStatus && (status !== undefined || !params.status)
           return (
@@ -82,8 +82,8 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
               type="button"
               aria-current={active ? 'page' : undefined}
               onClick={() => onChange({ status })}
-              className={`-mb-px border-b-2 px-3 py-2 text-sm font-medium transition-colors ${
-                active ? 'border-bark text-bark' : 'border-transparent text-stone-500 hover:text-bark'
+              className={`-mb-px h-11 shrink-0 border-b-2 px-3 text-[15px] transition-colors ${
+                active ? 'border-accent font-bold text-ink' : 'border-transparent text-muted hover:text-ink'
               }`}
             >
               {status === undefined ? 'All books' : STATUS_LABELS[status]}
@@ -92,9 +92,9 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
         })}
       </nav>
 
-      <div className="flex flex-wrap items-center gap-3 text-sm">
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-[15px]">
         <label className="flex items-center gap-2">
-          <span className="text-stone-600">Shelf</span>
+          <span className="text-muted">Shelf</span>
           <select
             className={SELECT_CLASSES}
             value={params.location?.length === 1 ? params.location[0] : ''}
@@ -110,7 +110,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
         </label>
 
         <label className="flex items-center gap-2">
-          <span className="text-stone-600">Rating</span>
+          <span className="text-muted">Rating</span>
           <select
             className={SELECT_CLASSES}
             value={params.minRating ?? ''}
@@ -126,7 +126,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
         </label>
 
         <label className="flex items-center gap-2">
-          <span className="text-stone-600">Sort by</span>
+          <span className="text-muted">Sort by</span>
           <select
             className={SELECT_CLASSES}
             value={sort}
@@ -143,7 +143,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
         <button
           type="button"
           onClick={() => onChange({ order: order === 'asc' ? 'desc' : 'asc' })}
-          className="inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-2 py-1.5 text-stone-700 hover:bg-stone-50"
+          className="inline-flex h-10 items-center gap-1.5 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-ink hover:bg-raised"
           aria-label={order === 'asc' ? 'Ascending order, switch to descending' : 'Descending order, switch to ascending'}
         >
           {order === 'asc' ? (
@@ -155,7 +155,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
         </button>
 
         {params.tag?.map((tag) => (
-          <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-bark/10 px-2.5 py-1 text-xs text-bark">
+          <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-[13px] text-ink">
             Tag: {tag}
             <button type="button" onClick={() => onChange({ tag: undefined })} aria-label={`Remove tag filter ${tag}`}>
               <X className="h-3 w-3" aria-hidden="true" />
@@ -169,7 +169,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
             onClick={() =>
               onChange({ q: undefined, status: undefined, location: undefined, minRating: undefined, tag: undefined })
             }
-            className="text-sm text-leaf-dark underline-offset-2 hover:underline"
+            className="text-[15px] text-ink underline-offset-2 hover:underline"
           >
             Clear filters
           </button>

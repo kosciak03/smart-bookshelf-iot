@@ -24,13 +24,13 @@ const MONTHS = Array.from({ length: 12 }, (_, index) => new Date(Date.UTC(2026, 
 function StatTile({ label, value, to }: { label: string; value: string; to?: string }) {
   const body = (
     <>
-      <div className="text-sm text-stone-500">{label}</div>
-      <div className="mt-1 text-2xl font-semibold text-bark">{value}</div>
+      <div className="text-[15px] text-muted">{label}</div>
+      <div className="mt-1 text-2xl font-semibold text-ink">{value}</div>
     </>
   )
-  const classes = 'block rounded-xl border border-stone-200 bg-white p-4 shadow-sm'
+  const classes = 'block rounded-[var(--radius-ui)] border border-line bg-surface p-4 '
   return to ? (
-    <Link to={to} className={`${classes} hover:border-leaf`}>
+    <Link to={to} className={`${classes} hover:border-accent`}>
       {body}
     </Link>
   ) : (
@@ -58,7 +58,7 @@ export function StatsPage() {
   if (stats.totals.books === 0) {
     return (
       <EmptyState title="No statistics yet">
-        <Link to="/books/new" className="text-leaf-dark underline">
+        <Link to="/books/new" className="text-ink underline">
           Add your first book
         </Link>
       </EmptyState>
@@ -84,13 +84,13 @@ export function StatsPage() {
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="font-serif text-2xl font-bold">Reading statistics</h1>
-        <label className="flex items-center gap-2 text-sm">
-          <span className="text-stone-600">Year</span>
+        <h1 className="em text-3xl">Reading statistics</h1>
+        <label className="flex items-center gap-2 text-[15px]">
+          <span className="text-muted">Year</span>
           <select
             value={stats.year.year}
             onChange={(event) => setSearch({ year: event.target.value })}
-            className="rounded-md border border-stone-300 bg-white px-2 py-1.5 text-sm"
+            className="rounded-[var(--radius-ui)] border border-line bg-surface px-2 py-1.5 text-[15px]"
           >
             {stats.year.availableYears.map((value) => (
               <option key={value} value={value}>
@@ -102,10 +102,10 @@ export function StatsPage() {
       </div>
 
       {/* Headline: the one hero number of the page. */}
-      <section className="rounded-xl border border-stone-200 bg-white p-6 shadow-sm">
-        <p className="text-sm text-stone-500">Books finished in {stats.year.year}</p>
-        <p className="text-5xl font-semibold text-bark">{stats.year.booksFinished}</p>
-        <p className="mt-1 text-sm text-stone-600">{stats.year.pagesFinished.toLocaleString('en-GB')} pages in finished books</p>
+      <section className="rounded-[var(--radius-ui)] border border-line bg-surface p-6 ">
+        <p className="text-[15px] text-muted">Books finished in {stats.year.year}</p>
+        <p className="text-5xl font-semibold text-ink">{stats.year.booksFinished}</p>
+        <p className="mt-1 text-[15px] text-muted">{stats.year.pagesFinished.toLocaleString('en-GB')} pages in finished books</p>
       </section>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
@@ -135,10 +135,10 @@ export function StatsPage() {
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
-          <h2 className="mb-4 font-semibold text-bark">Currently reading</h2>
+        <section className="rounded-[var(--radius-ui)] border border-line bg-surface p-5 ">
+          <h2 className="mb-4 font-semibold text-ink">Currently reading</h2>
           {stats.currentlyReading.length === 0 ? (
-            <p className="text-sm text-stone-500">Nothing in progress.</p>
+            <p className="text-[15px] text-muted">Nothing in progress.</p>
           ) : (
             <ul className="space-y-4">
               {stats.currentlyReading.map((book) => (
@@ -147,10 +147,10 @@ export function StatsPage() {
                     <BookCover title={book.title} coverUrl={book.coverUrl} />
                   </Link>
                   <div className="min-w-0 flex-1">
-                    <Link to={`/books/${book.id}`} className="line-clamp-1 font-serif text-sm font-bold hover:underline">
+                    <Link to={`/books/${book.id}`} className="line-clamp-1 em text-[15px] hover:underline">
                       {book.title}
                     </Link>
-                    <p className="line-clamp-1 text-xs text-stone-600">by {book.author}</p>
+                    <p className="line-clamp-1 text-[13px] text-muted">by {book.author}</p>
                     <ProgressBar pagesRead={book.pagesRead} pageCount={book.pageCount} />
                   </div>
                 </li>
@@ -159,39 +159,39 @@ export function StatsPage() {
           )}
         </section>
 
-        <section className="space-y-5 rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+        <section className="space-y-5 rounded-[var(--radius-ui)] border border-line bg-surface p-5 ">
           <div>
-            <h2 className="mb-2 font-semibold text-bark">On the smart shelf</h2>
-            <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-sm tabular-nums">
-              <dt className="text-stone-600">On the shelf</dt>
+            <h2 className="mb-2 font-semibold text-ink">On the smart shelf</h2>
+            <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-[15px] tabular-nums">
+              <dt className="text-muted">On the shelf</dt>
               <dd>{stats.totals.onShelf}</dd>
-              <dt className="text-stone-600">Taken off the shelf</dt>
+              <dt className="text-muted">Taken off the shelf</dt>
               <dd>{stats.totals.offShelf}</dd>
-              <dt className="text-stone-600">No shelf slot</dt>
+              <dt className="text-muted">No shelf slot</dt>
               <dd>{stats.totals.unassigned}</dd>
             </dl>
           </div>
           <div>
-            <h2 className="mb-2 font-semibold text-bark">Top tags</h2>
+            <h2 className="mb-2 font-semibold text-ink">Top tags</h2>
             {stats.topTags.length === 0 ? (
-              <p className="text-sm text-stone-500">No tags yet.</p>
+              <p className="text-[15px] text-muted">No tags yet.</p>
             ) : (
               <ul className="flex flex-wrap gap-2">
                 {stats.topTags.map(({ tag, count }) => (
                   <li key={tag}>
                     <Link
                       to={`/?tag=${encodeURIComponent(tag)}`}
-                      className="inline-flex items-center gap-1 rounded-full bg-bark/10 px-2.5 py-1 text-xs text-bark hover:bg-bark/20"
+                      className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-[13px] text-ink hover:bg-raised"
                     >
                       {tag}
-                      <span className="text-stone-500">{count}</span>
+                      <span className="text-muted">{count}</span>
                     </Link>
                   </li>
                 ))}
               </ul>
             )}
           </div>
-          <p className="text-sm text-stone-600">
+          <p className="text-[15px] text-muted">
             {stats.totals.pagesRead.toLocaleString('en-GB')} pages read in total (including books in progress).
           </p>
         </section>

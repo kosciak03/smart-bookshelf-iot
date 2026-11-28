@@ -75,8 +75,11 @@ const envSchema = z.object({
     .pipe(z.url({ protocol: /^(mqtts?|wss?)$/ }).optional()),
   /** First segment of every shelf topic (`<prefix>/shelf/<number>/...`). */
   MQTT_TOPIC_PREFIX: z.string().regex(/^[a-z0-9_-]+$/i).default("smartbookshelf"),
-  /** How long a "locate" or "put back here" slot highlight stays on (seconds). */
-  SHELF_HIGHLIGHT_SECONDS: z.coerce.number().int().positive().default(60),
+  /**
+   * How long a "locate" or "put back here" slot highlight blinks before it
+   * switches itself off (seconds); short to save power.
+   */
+  SHELF_HIGHLIGHT_SECONDS: z.coerce.number().int().positive().default(15),
   /** After an RFID scan, how long the scanned book is expected in its slot (seconds). */
   SHELF_EXPECT_SECONDS: z.coerce.number().int().positive().default(60),
   /** Number of WS2812B LEDs on the strip (walls + slots). */

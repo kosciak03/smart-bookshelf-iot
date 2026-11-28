@@ -7,15 +7,15 @@ import type { BookSortField, BookStatus, LocationStatus } from '../api/books'
 /** Human-readable reading status. */
 export const STATUS_LABELS: Record<BookStatus, string> = {
   WANT_TO_READ: 'Want to read',
-  READING: 'Currently reading',
+  READING: 'Reading',
   READ: 'Read',
 }
 
-/** Tailwind classes of the status badge. */
-export const STATUS_BADGE_CLASSES: Record<BookStatus, string> = {
-  WANT_TO_READ: 'bg-sky-100 text-sky-800',
-  READING: 'bg-amber-100 text-amber-900',
-  READ: 'bg-emerald-100 text-emerald-800',
+/** Tailwind class of the status dot. */
+export const STATUS_DOT_CLASSES: Record<BookStatus, string> = {
+  WANT_TO_READ: 'bg-status-want',
+  READING: 'bg-status-reading',
+  READ: 'bg-status-read',
 }
 
 /** Human-readable shelf location. */

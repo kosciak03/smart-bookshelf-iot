@@ -3,6 +3,7 @@
  * Integration tests for the shelf REST endpoints.
  */
 import { randomUUID } from "node:crypto";
+import type { AddressInfo } from "node:net";
 import request from "supertest";
 import { afterAll, beforeEach, describe, expect, it } from "vitest";
 import { createApp } from "../../app.js";
@@ -110,5 +111,62 @@ describe("locating and highlights", () => {
     const response = await request(app).post(`/api/books/${bookId}/locate`).expect(409);
     expect(response.body.error.message).toMatch(/no shelf slot/);
     await request(app).post(`/api/books/${randomUUID()}/locate`).expect(404);
+  });
+});
+
+describe("slot locate endpoints", () => {
+  it("blinks any slot (also an empty one), reports when it switches off, and stops early", async () => {
+    const before = Date.now();
+    const located = await request(app).post(`/api/shelf/slots/${slotIds[2]}/locate`).expect(200);
+    expect(located.body.data.slot).toMatchObject({ id: slotIds[2], slotNumber: 3 });
+    const until = Date.parse(located.body.data.slot.until);
+    // Default SHELF_HIGHLIGHT_SECONDS is 15 s.
+    expect(until - before).toBeGreaterThanOrEqual(14_000);
+    expect(until - before).toBeLessThanOrEqual(16_000);
+
+    const state = (await request(app).get("/api/shelf").expect(200)).body.data;
+    expect(state.slots[2]).toMatchObject({ highlight: "LOCATE", highlightUntil: located.body.data.slot.until });
+
+    await request(app).delete(`/api/shelf/slots/${slotIds[2]}/locate`).expect(204);
+    const after = (await request(app).get("/api/shelf").expect(200)).body.data;
+    expect(after.slots[2]).toMatchObject({ highlight: null, highlightUntil: null });
+
+    const events = (await request(app).get("/api/shelf/events?limit=2").expect(200)).body.data;
+    expect(events.map((event: { type: string }) => event.type)).toEqual(["HIGHLIGHT_OFF", "HIGHLIGHT_ON"]);
+    expect(events[0].payload).toEqual({ reason: "LOCATE", cause: "cancelled" });
+  });
+
+  it("returns 404 for an unknown slot and 400 for a malformed id", async () => {
+    await request(app).post(`/api/shelf/slots/${randomUUID()}/locate`).expect(404);
+    await request(app).delete(`/api/shelf/slots/${randomUUID()}/locate`).expect(404);
+    await request(app).post("/api/shelf/slots/abc/locate").expect(400);
+  });
+
+  it("stopping a slot that is not blinking is a no-op", async () => {
+    await request(app).delete(`/api/shelf/slots/${slotIds[0]}/locate`).expect(204);
+    expect(await prisma.shelfEvent.count()).toBe(0);
+  });
+});
+
+describe("GET /api/shelf/stream", () => {
+  it("sends an SSE event when the shelf changes", async () => {
+    const server = app.listen(0);
+    const { port } = server.address() as AddressInfo;
+    const controller = new AbortController();
+    try {
+      const response = await fetch(`http://127.0.0.1:${port}/api/shelf/stream`, { signal: controller.signal });
+      expect(response.headers.get("content-type")).toContain("text/event-stream");
+      const reader = response.body!.getReader();
+      const decoder = new TextDecoder();
+      let text = decoder.decode((await reader.read()).value);
+      expect(text).toContain("retry: 3000");
+
+      await request(app).post(`/api/shelf/slots/${slotIds[1]}/locate`).expect(200);
+      while (!text.includes("event: shelf")) text += decoder.decode((await reader.read()).value);
+      expect(text).toContain('data: {"shelfNumber":1,"reason":"highlight"}');
+    } finally {
+      controller.abort();
+      server.close();
+    }
   });
 });

@@ -119,30 +119,30 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Scan ISBN barcode">
-      <div className="w-full max-w-md space-y-4 rounded-xl bg-white p-5 shadow-xl">
+      <div className="w-full max-w-md space-y-4 rounded-[var(--radius-ui)] bg-surface p-5">
         <div className="flex items-center justify-between">
-          <h2 className="flex items-center gap-2 font-serif text-lg font-bold">
+          <h2 className="flex items-center gap-2 em text-lg">
             <Camera className="h-5 w-5" aria-hidden="true" />
             Scan the barcode
           </h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-stone-500 hover:bg-stone-100" aria-label="Close scanner">
+          <button type="button" onClick={onClose} className="rounded p-1 text-muted hover:bg-raised" aria-label="Close scanner">
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
 
-        <div id={SCANNER_ELEMENT_ID} className="min-h-12 overflow-hidden rounded-lg bg-stone-900" />
+        <div id={SCANNER_ELEMENT_ID} className="min-h-12 overflow-hidden rounded-[var(--radius-ui)] bg-black" />
 
         {cameraActive && !cameraError && (
-          <p className="text-sm text-stone-600">Point the camera at the barcode on the back cover.</p>
+          <p className="text-[15px] text-muted">Point the camera at the barcode on the back cover.</p>
         )}
-        {cameraError && <p className="text-sm text-amber-800">{cameraError}</p>}
+        {cameraError && <p className="text-[15px] text-warn">{cameraError}</p>}
         {hint && (
-          <p className="text-sm text-red-700" role="alert">
+          <p className="text-[15px] text-danger" role="alert">
             {hint}
           </p>
         )}
 
-        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-md border border-stone-300 px-4 py-2 text-sm hover:bg-stone-50">
+        <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-ui)] border border-line px-4 py-2 text-[15px] hover:bg-raised">
           <ImageUp className="h-4 w-4" aria-hidden="true" />
           Use a photo of the barcode
           <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(event) => void handleFile(event)} />

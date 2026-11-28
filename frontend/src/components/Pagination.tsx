@@ -7,7 +7,7 @@ import type { PageMeta } from '../api/books'
 
 /** Classes of the page buttons. */
 const BUTTON_CLASSES =
-  'inline-flex items-center gap-1 rounded-md border border-stone-300 bg-white px-3 py-1.5 text-sm hover:bg-stone-50 disabled:cursor-not-allowed disabled:opacity-40'
+  'inline-flex items-center gap-1 rounded-[var(--radius-ui)] border border-line bg-surface px-3 py-1.5 text-[15px] hover:bg-raised disabled:cursor-not-allowed disabled:opacity-40'
 
 /**
  * Renders the pagination bar (hidden when everything fits on one page).
@@ -23,7 +23,7 @@ export function Pagination({ meta, onPageChange }: { meta: PageMeta; onPageChang
         <ChevronLeft className="h-4 w-4" aria-hidden="true" />
         Previous
       </button>
-      <span className="text-sm text-stone-600">
+      <span className="text-[15px] text-muted">
         Page {meta.page} of {meta.totalPages}
       </span>
       <button

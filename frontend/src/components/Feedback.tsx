@@ -13,9 +13,9 @@ import { ApiError } from '../api/client'
  */
 export function Spinner({ label = 'Loading…' }: { label?: string }) {
   return (
-    <div className="flex items-center justify-center gap-2 py-10 text-stone-500" role="status">
+    <div className="flex items-center justify-center gap-2 py-10 text-muted" role="status">
       <LoaderCircle className="h-5 w-5 animate-spin" aria-hidden="true" />
-      <span className="text-sm">{label}</span>
+      <span>{label}</span>
     </div>
   )
 }
@@ -38,8 +38,11 @@ export function errorMessage(error: unknown): string {
  */
 export function ErrorMessage({ error, children }: { error: unknown; children?: ReactNode }) {
   return (
-    <div className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-800" role="alert">
-      <CircleExclamationPoint className="mt-0.5 h-4 w-4 shrink-0" aria-hidden="true" />
+    <div
+      className="flex items-start gap-3 rounded-[var(--radius-ui)] border border-danger/40 bg-danger-soft p-4 text-[15px] text-ink"
+      role="alert"
+    >
+      <CircleExclamationPoint className="mt-0.5 h-4 w-4 shrink-0 text-danger" aria-hidden="true" />
       <div className="space-y-2">
         <p>{errorMessage(error)}</p>
         {children}
@@ -56,9 +59,9 @@ export function ErrorMessage({ error, children }: { error: unknown; children?: R
  */
 export function EmptyState({ title, children }: { title: string; children?: ReactNode }) {
   return (
-    <div className="rounded-xl border border-dashed border-stone-300 bg-white/60 px-6 py-12 text-center">
-      <p className="font-serif text-lg text-bark">{title}</p>
-      {children && <div className="mt-2 text-sm text-stone-600">{children}</div>}
+    <div className="rounded-[var(--radius-ui)] border border-dashed border-line bg-surface px-6 py-12 text-center">
+      <p className="em text-xl">{title}</p>
+      {children && <div className="mt-2 text-muted">{children}</div>}
     </div>
   )
 }

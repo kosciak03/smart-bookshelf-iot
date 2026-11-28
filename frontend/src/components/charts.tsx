@@ -61,31 +61,31 @@ export function ChartCard({
 }) {
   const [asTable, setAsTable] = useState(false)
   return (
-    <section className="rounded-xl border border-stone-200 bg-white p-5 shadow-sm">
+    <section className="rounded-[var(--radius-ui)] border border-line bg-surface p-5 ">
       <div className="mb-4 flex items-start justify-between gap-3">
         <div>
-          <h2 className="font-semibold text-bark">{title}</h2>
-          {subtitle && <p className="text-sm text-stone-500">{subtitle}</p>}
+          <h2 className="font-semibold text-ink">{title}</h2>
+          {subtitle && <p className="text-[15px] text-muted">{subtitle}</p>}
         </div>
-        <button type="button" onClick={() => setAsTable(!asTable)} className="shrink-0 text-xs text-leaf-dark hover:underline">
+        <button type="button" onClick={() => setAsTable(!asTable)} className="shrink-0 text-[13px] text-ink hover:underline">
           {asTable ? 'Show chart' : 'Show table'}
         </button>
       </div>
       {asTable ? (
-        <table className="w-full text-sm">
+        <table className="w-full text-[15px]">
           <thead>
-            <tr className="border-b border-stone-200 text-left text-stone-500">
+            <tr className="border-b border-line text-left text-muted">
               <th className="py-1 font-medium">{title}</th>
               <th className="py-1 text-right font-medium">{valueLabel}</th>
             </tr>
           </thead>
           <tbody className="tabular-nums">
             {data.map((datum) => (
-              <tr key={datum.fullLabel} className="border-b border-stone-100">
+              <tr key={datum.fullLabel} className="border-b border-line">
                 <td className="py-1">{datum.fullLabel}</td>
                 <td className="py-1 text-right">
                   {datum.value}
-                  {datum.detail && <span className="text-stone-400"> · {datum.detail}</span>}
+                  {datum.detail && <span className="text-muted"> · {datum.detail}</span>}
                 </td>
               </tr>
             ))}
@@ -115,7 +115,7 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
   return (
     <div className="flex gap-2">
       {/* Y axis */}
-      <div className="relative w-6 shrink-0 text-right text-xs tabular-nums text-stone-400" style={{ height: PLOT_HEIGHT }} aria-hidden="true">
+      <div className="relative w-6 shrink-0 text-right text-[13px] tabular-nums text-muted" style={{ height: PLOT_HEIGHT }} aria-hidden="true">
         {ticks.map((tick) => (
           <span key={tick} className="absolute right-0" style={{ bottom: `${(tick / top) * 100}%`, transform: 'translateY(50%)' }}>
             {tick}
@@ -127,7 +127,7 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
         <div className="relative" style={{ height: PLOT_HEIGHT }}>
           {/* Gridlines (hairline, solid, recessive) */}
           {ticks.map((tick) => (
-            <div key={tick} className="absolute inset-x-0 border-t border-stone-200" style={{ bottom: `${(tick / top) * 100}%` }} aria-hidden="true" />
+            <div key={tick} className="absolute inset-x-0 border-t border-line" style={{ bottom: `${(tick / top) * 100}%` }} aria-hidden="true" />
           ))}
 
           <ul className="absolute inset-0 flex items-end" aria-label={`Chart of ${unit}`}>
@@ -135,7 +135,7 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
               <li key={datum.fullLabel} className="relative flex h-full flex-1 items-end justify-center">
                 <button
                   type="button"
-                  className="flex h-full w-full items-end justify-center outline-none focus-visible:bg-stone-100"
+                  className="flex h-full w-full items-end justify-center outline-none focus-visible:bg-raised"
                   aria-label={`${datum.fullLabel}: ${datum.value} ${unit}${datum.detail ? `, ${datum.detail}` : ''}`}
                   onMouseEnter={() => setActive(index)}
                   onMouseLeave={() => setActive(null)}
@@ -144,13 +144,13 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
                 >
                   {datum.value > 0 && (
                     <span
-                      className={`block w-full max-w-6 rounded-t bg-leaf transition-opacity ${active !== null && active !== index ? 'opacity-50' : ''}`}
+                      className={`block w-full max-w-6 rounded-t bg-accent transition-opacity ${active !== null && active !== index ? 'opacity-50' : ''}`}
                       style={{ height: `${(datum.value / top) * 100}%` }}
                     />
                   )}
                 </button>
                 {active === index && (
-                  <div className="pointer-events-none absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-md bg-bark px-2 py-1 text-xs text-white shadow" role="tooltip">
+                  <div className="pointer-events-none absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-[var(--radius-ui)] bg-accent px-2 py-1 text-[13px] text-on-accent shadow" role="tooltip">
                     <div className="font-medium">{datum.fullLabel}</div>
                     <div>
                       {datum.value} {unit}
@@ -164,7 +164,7 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
         </div>
 
         {/* X axis labels */}
-        <div className="mt-1 flex text-center text-xs text-stone-500" aria-hidden="true">
+        <div className="mt-1 flex text-center text-[13px] text-muted" aria-hidden="true">
           {data.map((datum) => (
             <span key={datum.fullLabel} className="flex-1">
               {datum.label}
@@ -187,13 +187,13 @@ export function BarChart({ data, unit }: { data: ChartDatum[]; unit: string }) {
   return (
     <ul className="space-y-2" aria-label={`Chart of ${unit}`}>
       {data.map((datum) => (
-        <li key={datum.fullLabel} className="flex items-center gap-3 text-sm" title={`${datum.fullLabel}: ${datum.value} ${unit}`}>
-          <span className="w-16 shrink-0 text-stone-600">{datum.label}</span>
+        <li key={datum.fullLabel} className="flex items-center gap-3 text-[15px]" title={`${datum.fullLabel}: ${datum.value} ${unit}`}>
+          <span className="w-16 shrink-0 text-muted">{datum.label}</span>
           <span className="flex flex-1 items-center gap-2">
             {datum.value > 0 && (
-              <span className="block h-4 rounded-r bg-leaf" style={{ width: `${(datum.value / max) * 85}%` }} aria-hidden="true" />
+              <span className="block h-4 rounded-r bg-accent" style={{ width: `${(datum.value / max) * 85}%` }} aria-hidden="true" />
             )}
-            <span className="tabular-nums text-stone-700">
+            <span className="tabular-nums text-ink">
               {datum.value}
               <span className="sr-only"> {unit}</span>
             </span>
