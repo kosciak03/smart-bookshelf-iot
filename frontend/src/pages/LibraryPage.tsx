@@ -12,6 +12,7 @@ import { Pagination } from '../components/Pagination'
 import { ShelfStrip } from '../components/ShelfStrip'
 import { useBookList } from '../hooks/useBooks'
 import { useLibraryFilters } from '../hooks/useLibraryFilters'
+import { useI18n } from '../i18n/core'
 
 /** Filter changes that reset every filter. */
 const CLEAR_FILTERS = { q: undefined, status: undefined, location: undefined, minRating: undefined, tag: undefined }
@@ -20,6 +21,7 @@ const CLEAR_FILTERS = { q: undefined, status: undefined, location: undefined, mi
  * Renders the library page. Its state lives in the URL (see `useLibraryFilters`).
  */
 export function LibraryPage() {
+  const { t } = useI18n()
   const { params, update } = useLibraryFilters()
   const { data, error, isPending, isFetching, refetch } = useBookList(params)
   const filtered = Boolean(params.q || params.status || params.location || params.minRating || params.tag)
@@ -28,12 +30,11 @@ export function LibraryPage() {
     <div className="space-y-5 sm:space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
-          <h1 className="em text-3xl">Library</h1>
+          <h1 className="em text-3xl">{t('library.title')}</h1>
           {data && (
             <p className="text-muted" aria-live="polite">
-              {data.meta.total} {data.meta.total === 1 ? 'book' : 'books'}
-              {filtered ? ' match your filters' : ' in your library'}
-              {isFetching && ' · updating…'}
+              {t(filtered ? 'library.summaryFiltered' : 'library.summary', { count: data.meta.total })}
+              {isFetching && t('library.updating')}
             </p>
           )}
         </div>
@@ -42,7 +43,7 @@ export function LibraryPage() {
           className="hidden h-11 items-center gap-2 rounded-[var(--radius-ui)] bg-accent px-4 font-medium text-on-accent hover:bg-accent-hover sm:inline-flex"
         >
           <Plus className="h-4 w-4" aria-hidden="true" />
-          Add book
+          {t('library.addBook')}
         </Link>
       </div>
 
@@ -50,25 +51,25 @@ export function LibraryPage() {
 
       <LibraryToolbar params={params} onChange={update} />
 
-      {isPending && <Spinner label="Loading books…" />}
+      {isPending && <Spinner label={t('library.loading')} />}
 
       {error && (
         <ErrorMessage error={error}>
           <button type="button" className="font-medium underline" onClick={() => void refetch()}>
-            Try again
+            {t('common.tryAgain')}
           </button>
         </ErrorMessage>
       )}
 
       {data && data.data.length === 0 && (
-        <EmptyState title={filtered ? 'No books match your filters' : 'Your library is empty'}>
+        <EmptyState title={filtered ? t('library.emptyFiltered') : t('library.empty')}>
           {filtered ? (
             <button type="button" className="text-ink underline" onClick={() => update(CLEAR_FILTERS)}>
-              Clear filters
+              {t('library.clearFilters')}
             </button>
           ) : (
             <Link to="/books/new" className="text-ink underline">
-              Add your first book
+              {t('library.addFirst')}
             </Link>
           )}
         </EmptyState>

@@ -14,7 +14,7 @@ import {
   type ListBooksParams,
   type LocationStatus,
 } from '../api/books'
-import { SORT_LABELS } from '../lib/labels'
+import { SORT_FIELDS } from '../lib/labels'
 
 /** Books per page in the library grid. */
 export const LIBRARY_PAGE_SIZE = 24
@@ -50,7 +50,7 @@ export function parseLibraryParams(search: URLSearchParams): ListBooksParams {
   const tag = search.get('tag')?.trim()
   if (tag) params.tag = [tag.toLowerCase()]
   const sort = search.get('sort')
-  if (sort !== null && sort in SORT_LABELS && (sort !== 'relevance' || params.q)) params.sort = sort as BookSortField
+  if (sort !== null && (SORT_FIELDS as readonly string[]).includes(sort) && (sort !== 'relevance' || params.q)) params.sort = sort as BookSortField
   const order = search.get('order')
   if (order === 'asc' || order === 'desc') params.order = order
   const page = Number(search.get('page'))

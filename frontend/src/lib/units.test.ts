@@ -63,12 +63,12 @@ describe('book form', () => {
   const valid = { ...EMPTY_BOOK_FORM, title: ' Solaris ', author: 'Stanisław Lem' }
 
   it('validates required fields and number formats', () => {
-    expect(validateBookForm(EMPTY_BOOK_FORM)).toEqual({ title: 'Title is required', author: 'Author is required' })
+    expect(validateBookForm(EMPTY_BOOK_FORM)).toEqual({ title: 'form.errors.titleRequired', author: 'form.errors.authorRequired' })
     expect(validateBookForm({ ...valid, isbn: '123', publishedYear: '99', pageCount: '-5', coverUrl: 'ftp://x' })).toEqual({
-      isbn: 'ISBN must have 10 or 13 digits',
-      publishedYear: 'Enter a year between 1450 and 2100',
-      pageCount: 'Enter a positive number of pages',
-      coverUrl: 'Enter an http(s) address',
+      isbn: 'form.errors.isbnDigits',
+      publishedYear: 'form.errors.year',
+      pageCount: 'form.errors.pages',
+      coverUrl: 'form.errors.coverUrl',
     })
     expect(validateBookForm({ ...valid, isbn: '0-13-235088-2', pageCount: '464' })).toEqual({})
   })

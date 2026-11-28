@@ -4,6 +4,7 @@
  */
 import { ChevronLeft, ChevronRight } from 'lucide-react'
 import type { PageMeta } from '../api/books'
+import { useI18n } from '../i18n/core'
 
 /** Classes of the page buttons. */
 const BUTTON_CLASSES =
@@ -16,15 +17,16 @@ const BUTTON_CLASSES =
  * @param props.onPageChange - Called with the requested page number.
  */
 export function Pagination({ meta, onPageChange }: { meta: PageMeta; onPageChange: (page: number) => void }) {
+  const { t } = useI18n()
   if (meta.totalPages <= 1) return null
   return (
-    <nav className="flex items-center justify-center gap-3" aria-label="Pagination">
+    <nav className="flex items-center justify-center gap-3" aria-label={t('pagination.label')}>
       <button type="button" className={BUTTON_CLASSES} disabled={meta.page <= 1} onClick={() => onPageChange(meta.page - 1)}>
         <ChevronLeft className="h-4 w-4" aria-hidden="true" />
-        Previous
+        {t('pagination.previous')}
       </button>
       <span className="text-[15px] text-muted">
-        Page {meta.page} of {meta.totalPages}
+        {t('pagination.page', { page: meta.page, total: meta.totalPages })}
       </span>
       <button
         type="button"
@@ -32,7 +34,7 @@ export function Pagination({ meta, onPageChange }: { meta: PageMeta; onPageChang
         disabled={meta.page >= meta.totalPages}
         onClick={() => onPageChange(meta.page + 1)}
       >
-        Next
+        {t('pagination.next')}
         <ChevronRight className="h-4 w-4" aria-hidden="true" />
       </button>
     </nav>

@@ -7,7 +7,9 @@
  */
 import { LocateFixed } from 'lucide-react'
 import type { ShelfSlot } from '../api/shelf'
+import { useI18n } from '../i18n/core'
 import { locateSecondsLeft, useLocateBook, useNow, useShelf, useStopLocate } from '../hooks/useShelf'
+import { errorMessage } from './Feedback'
 
 /** Props of {@link LocateButton}. */
 export interface LocateButtonProps {
@@ -32,6 +34,8 @@ export function findSlot(slots: ShelfSlot[] | undefined, slotId: string): ShelfS
  * Renders the button.
  */
 export function LocateButton({ bookId, slotId, variant = 'card' }: LocateButtonProps) {
+  const i18n = useI18n()
+  const { t } = i18n
   const { data: shelf } = useShelf()
   const slot = findSlot(shelf?.slots, slotId)
   const blinking = slot?.highlight === 'LOCATE'
@@ -62,11 +66,15 @@ export function LocateButton({ bookId, slotId, variant = 'card' }: LocateButtonP
         ) : (
           <LocateFixed className="h-4 w-4" aria-hidden="true" />
         )}
-        {blinking ? `Blinking${secondsLeft !== null ? ` · ${secondsLeft} s` : ''} – turn off` : 'Find on shelf'}
+        {blinking
+          ? secondsLeft !== null
+            ? t('locate.blinking', { seconds: secondsLeft })
+            : t('locate.blinkingShort')
+          : t('locate.find')}
       </button>
       {(locate.error || stop.error) && (
         <p className="text-[13px] text-danger" role="alert">
-          {(locate.error ?? stop.error)?.message}
+          {errorMessage(locate.error ?? stop.error, i18n)}
         </p>
       )}
     </div>

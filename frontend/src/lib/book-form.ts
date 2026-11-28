@@ -7,6 +7,7 @@
  * feedback for the obvious mistakes.
  */
 import type { Book, BookInput, BookStatus } from '../api/books'
+import type { MessageKey } from '../i18n/core'
 
 /** Values of the book form (every input is a string, as in the DOM). */
 export interface BookFormValues {
@@ -86,28 +87,28 @@ function parseOptionalInt(text: string): number | null {
  * Validates the form.
  *
  * @param values - Form values.
- * @returns Error message per invalid field; empty when the form is valid.
+ * @returns Message key of the error per invalid field; empty when the form is valid.
  */
-export function validateBookForm(values: BookFormValues): Partial<Record<BookFormField, string>> {
-  const errors: Partial<Record<BookFormField, string>> = {}
-  if (values.title.trim() === '') errors.title = 'Title is required'
-  if (values.author.trim() === '') errors.author = 'Author is required'
+export function validateBookForm(values: BookFormValues): Partial<Record<BookFormField, MessageKey>> {
+  const errors: Partial<Record<BookFormField, MessageKey>> = {}
+  if (values.title.trim() === '') errors.title = 'form.errors.titleRequired'
+  if (values.author.trim() === '') errors.author = 'form.errors.authorRequired'
 
   const isbnDigits = values.isbn.replace(/[\s-]/g, '')
   if (isbnDigits !== '' && !/^(\d{9}[\dXx]|\d{13})$/.test(isbnDigits)) {
-    errors.isbn = 'ISBN must have 10 or 13 digits'
+    errors.isbn = 'form.errors.isbnDigits'
   }
 
   const year = parseOptionalInt(values.publishedYear)
   if (year !== null && (Number.isNaN(year) || year < 1450 || year > 2100)) {
-    errors.publishedYear = 'Enter a year between 1450 and 2100'
+    errors.publishedYear = 'form.errors.year'
   }
 
   const pages = parseOptionalInt(values.pageCount)
-  if (pages !== null && (Number.isNaN(pages) || pages < 1)) errors.pageCount = 'Enter a positive number of pages'
+  if (pages !== null && (Number.isNaN(pages) || pages < 1)) errors.pageCount = 'form.errors.pages'
 
   const cover = values.coverUrl.trim()
-  if (cover !== '' && !/^https?:\/\/\S+$/i.test(cover)) errors.coverUrl = 'Enter an http(s) address'
+  if (cover !== '' && !/^https?:\/\/\S+$/i.test(cover)) errors.coverUrl = 'form.errors.coverUrl'
 
   return errors
 }

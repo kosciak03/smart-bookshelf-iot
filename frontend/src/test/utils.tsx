@@ -8,6 +8,7 @@ import { createMemoryRouter, RouterProvider } from 'react-router'
 import { vi } from 'vitest'
 import type { Book } from '../api/books'
 import type { ShelfSlot, ShelfState } from '../api/shelf'
+import { I18nProvider, type Language } from '../i18n/core'
 import { routes } from '../router'
 
 /** A recorded API call. */
@@ -57,15 +58,18 @@ export function mockApi(handler: ApiHandler): RecordedRequest[] {
  * Renders the whole application at a URL (memory router, fresh query cache).
  *
  * @param path - Initial URL, e.g. `/books/new`.
+ * @param language - UI language (English by default).
  * @returns Testing Library utilities and the router (for `router.state.location`).
  */
-export function renderApp(path = '/') {
+export function renderApp(path = '/', language: Language = 'en') {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false }, mutations: { retry: false } } })
   const router = createMemoryRouter(routes, { initialEntries: [path] })
   const utils = render(
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>,
+    <I18nProvider initialLanguage={language}>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </I18nProvider>,
   )
   return { ...utils, router }
 }

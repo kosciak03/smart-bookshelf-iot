@@ -6,7 +6,7 @@ import { ArrowDownWideNarrow, ArrowUpNarrowWide, Search, X } from 'lucide-react'
 import { useCallback, useEffect, useState } from 'react'
 import { BOOK_STATUSES, LOCATION_STATUSES, type BookSortField, type ListBooksParams } from '../api/books'
 import type { LibraryFilterChanges } from '../hooks/useLibraryFilters'
-import { LOCATION_LABELS, SORT_LABELS, STATUS_LABELS } from '../lib/labels'
+import { useI18n } from '../i18n/core'
 
 /** Delay between the last keystroke and the search request. */
 export const SEARCH_DEBOUNCE_MS = 350
@@ -18,6 +18,7 @@ export const SEARCH_DEBOUNCE_MS = 350
  * @param props.onSearch - Called with the trimmed phrase.
  */
 export function SearchBox({ value, onSearch }: { value: string; onSearch: (q: string) => void }) {
+  const { t } = useI18n()
   const [text, setText] = useState(value)
 
   // Follow external changes (back button, "clear filters").
@@ -31,13 +32,13 @@ export function SearchBox({ value, onSearch }: { value: string; onSearch: (q: st
 
   return (
     <label className="relative block">
-      <span className="sr-only">Search books</span>
+      <span className="sr-only">{t('toolbar.searchLabel')}</span>
       <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted" aria-hidden="true" />
       <input
         type="search"
         value={text}
         onChange={(event) => setText(event.target.value)}
-        placeholder="Search by title, author, ISBN or tag…"
+        placeholder={t('toolbar.searchPlaceholder')}
         className="w-full h-11 rounded-[var(--radius-ui)] border border-line bg-surface pl-9 pr-4 text-[15px] outline-none focus:border-accent focus:ring-2 focus:ring-accent/25"
       />
     </label>
@@ -61,6 +62,7 @@ export interface LibraryToolbarProps {
  * Renders the search box, the reading-status tabs and the filter row.
  */
 export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
+  const { t } = useI18n()
   const activeStatus = params.status?.length === 1 ? params.status[0] : undefined
   const sort: BookSortField = params.sort ?? (params.q ? 'relevance' : 'createdAt')
   const ascendingByDefault = sort === 'title' || sort === 'author'
@@ -73,7 +75,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
     <div className="space-y-4">
       <SearchBox value={params.q ?? ''} onSearch={handleSearch} />
 
-      <nav className="-mx-1 flex gap-1 overflow-x-auto border-b border-line px-1" aria-label="Reading status">
+      <nav className="-mx-1 flex gap-1 overflow-x-auto border-b border-line px-1" aria-label={t('toolbar.statusNav')}>
         {[undefined, ...BOOK_STATUSES].map((status) => {
           const active = status === activeStatus && (status !== undefined || !params.status)
           return (
@@ -86,7 +88,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
                 active ? 'border-accent font-bold text-ink' : 'border-transparent text-muted hover:text-ink'
               }`}
             >
-              {status === undefined ? 'All books' : STATUS_LABELS[status]}
+              {status === undefined ? t('toolbar.all') : t(`status.${status}`)}
             </button>
           )
         })}
@@ -94,39 +96,39 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
 
       <div className="flex flex-wrap items-center gap-x-4 gap-y-2.5 text-[15px]">
         <label className="flex items-center gap-2">
-          <span className="text-muted">Shelf</span>
+          <span className="text-muted">{t('toolbar.shelf')}</span>
           <select
             className={SELECT_CLASSES}
             value={params.location?.length === 1 ? params.location[0] : ''}
             onChange={(event) => onChange({ location: event.target.value })}
           >
-            <option value="">Any</option>
+            <option value="">{t('toolbar.any')}</option>
             {LOCATION_STATUSES.map((location) => (
               <option key={location} value={location}>
-                {LOCATION_LABELS[location]}
+                {t(`location.${location}`)}
               </option>
             ))}
           </select>
         </label>
 
         <label className="flex items-center gap-2">
-          <span className="text-muted">Rating</span>
+          <span className="text-muted">{t('toolbar.rating')}</span>
           <select
             className={SELECT_CLASSES}
             value={params.minRating ?? ''}
             onChange={(event) => onChange({ minRating: event.target.value })}
           >
-            <option value="">Any</option>
+            <option value="">{t('toolbar.any')}</option>
             {[5, 4, 3, 2, 1].map((rating) => (
               <option key={rating} value={rating}>
-                {rating === 5 ? '★★★★★ only' : `${'★'.repeat(rating)} & up`}
+                {rating === 5 ? t('toolbar.onlyFive') : t('toolbar.atLeast', { stars: '★'.repeat(rating) })}
               </option>
             ))}
           </select>
         </label>
 
         <label className="flex items-center gap-2">
-          <span className="text-muted">Sort by</span>
+          <span className="text-muted">{t('toolbar.sortBy')}</span>
           <select
             className={SELECT_CLASSES}
             value={sort}
@@ -134,7 +136,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
           >
             {(params.q ? (['relevance', ...SORT_OPTIONS] as BookSortField[]) : SORT_OPTIONS).map((option) => (
               <option key={option} value={option}>
-                {SORT_LABELS[option]}
+                {t(`sort.${option}`)}
               </option>
             ))}
           </select>
@@ -144,20 +146,20 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
           type="button"
           onClick={() => onChange({ order: order === 'asc' ? 'desc' : 'asc' })}
           className="inline-flex h-10 items-center gap-1.5 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-ink hover:bg-raised"
-          aria-label={order === 'asc' ? 'Ascending order, switch to descending' : 'Descending order, switch to ascending'}
+          aria-label={order === 'asc' ? t('toolbar.ascendingAria') : t('toolbar.descendingAria')}
         >
           {order === 'asc' ? (
             <ArrowUpNarrowWide className="h-4 w-4" aria-hidden="true" />
           ) : (
             <ArrowDownWideNarrow className="h-4 w-4" aria-hidden="true" />
           )}
-          {order === 'asc' ? 'Ascending' : 'Descending'}
+          {order === 'asc' ? t('toolbar.ascending') : t('toolbar.descending')}
         </button>
 
         {params.tag?.map((tag) => (
           <span key={tag} className="inline-flex items-center gap-1 rounded-full bg-accent-soft px-2.5 py-1 text-[13px] text-ink">
-            Tag: {tag}
-            <button type="button" onClick={() => onChange({ tag: undefined })} aria-label={`Remove tag filter ${tag}`}>
+            {t('toolbar.tag', { tag })}
+            <button type="button" onClick={() => onChange({ tag: undefined })} aria-label={t('toolbar.removeTag', { tag })}>
               <X className="h-3 w-3" aria-hidden="true" />
             </button>
           </span>
@@ -171,7 +173,7 @@ export function LibraryToolbar({ params, onChange }: LibraryToolbarProps) {
             }
             className="text-[15px] text-ink underline-offset-2 hover:underline"
           >
-            Clear filters
+            {t('toolbar.clearFilters')}
           </button>
         )}
       </div>

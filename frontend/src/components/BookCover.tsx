@@ -4,6 +4,7 @@
  * (or when the image fails to load).
  */
 import { useState } from 'react'
+import { useI18n } from '../i18n/core'
 
 /** Muted placeholder colours [background, text] (chosen by a hash of the title). */
 const PLACEHOLDER_COLOURS: ReadonlyArray<readonly [string, string]> = [
@@ -49,13 +50,14 @@ const PLACEHOLDER_TEXT = {
  * Renders a 2:3 book cover.
  */
 export function BookCover({ title, author, coverUrl, className = 'w-full', size = 'sm' }: BookCoverProps) {
+  const { t } = useI18n()
   const [failed, setFailed] = useState(false)
 
   if (coverUrl !== null && !failed) {
     return (
       <img
         src={coverUrl}
-        alt={`Cover of ${title}`}
+        alt={t('book.coverOf', { title })}
         loading="lazy"
         onError={() => setFailed(true)}
         className={`${className} aspect-[2/3] rounded-[2px] object-cover shadow-[var(--sb-cover-shadow)]`}
@@ -70,7 +72,7 @@ export function BookCover({ title, author, coverUrl, className = 'w-full', size 
       className={`${className} flex aspect-[2/3] flex-col justify-between overflow-hidden rounded-[2px] ${size === 'xs' ? 'p-1' : 'p-3'}`}
       style={{ backgroundColor: background, color: foreground }}
       role="img"
-      aria-label={`No cover for ${title}`}
+      aria-label={t('book.noCover', { title })}
     >
       <span className={`em line-clamp-4 leading-tight ${titleSize}`}>{title}</span>
       {author && <span className={`em line-clamp-2 opacity-85 ${authorSize}`}>{author}</span>}

@@ -10,6 +10,7 @@ import { BookCover } from '../components/BookCover'
 import { ProgressBar } from '../components/BookBadges'
 import { BarChart, ChartCard, ColumnChart, type ChartDatum } from '../components/charts'
 import { EmptyState, ErrorMessage, Spinner } from '../components/Feedback'
+import { useI18n } from '../i18n/core'
 
 /** Month names for axis labels and tooltips. */
 const MONTHS = Array.from({ length: 12 }, (_, index) => new Date(Date.UTC(2026, index, 1)))
@@ -42,6 +43,7 @@ function StatTile({ label, value, to }: { label: string; value: string; to?: str
  * Renders the statistics page.
  */
 export function StatsPage() {
+  const { t, locale, formatNumber } = useI18n()
   const [search, setSearch] = useSearchParams()
   const yearParam = Number(search.get('year'))
   const year = Number.isInteger(yearParam) && yearParam >= 1900 && yearParam <= 2100 ? yearParam : undefined
@@ -52,14 +54,14 @@ export function StatsPage() {
     placeholderData: keepPreviousData,
   })
 
-  if (isPending) return <Spinner label="Loading statistics…" />
+  if (isPending) return <Spinner label={t('stats.loading')} />
   if (error || !stats) return <ErrorMessage error={error} />
 
   if (stats.totals.books === 0) {
     return (
-      <EmptyState title="No statistics yet">
+      <EmptyState title={t('stats.empty')}>
         <Link to="/books/new" className="text-ink underline">
-          Add your first book
+          {t('stats.addFirst')}
         </Link>
       </EmptyState>
     )
@@ -68,25 +70,25 @@ export function StatsPage() {
   const monthly: ChartDatum[] = stats.year.monthly.map((bucket) => {
     const date = MONTHS[bucket.month - 1] ?? new Date()
     return {
-      label: date.toLocaleDateString('en-GB', { month: 'narrow', timeZone: 'UTC' }),
-      fullLabel: `${date.toLocaleDateString('en-GB', { month: 'long', timeZone: 'UTC' })} ${stats.year.year}`,
+      label: date.toLocaleDateString(locale, { month: 'narrow', timeZone: 'UTC' }),
+      fullLabel: `${date.toLocaleDateString(locale, { month: 'long', timeZone: 'UTC' })} ${stats.year.year}`,
       value: bucket.books,
-      detail: `${bucket.pages.toLocaleString('en-GB')} pages`,
+      detail: t('stats.pagesDetail', { count: bucket.pages }),
     }
   })
 
   const ratings: ChartDatum[] = [...stats.ratings.distribution].reverse().map((bucket) => ({
     label: '★'.repeat(bucket.rating),
-    fullLabel: `${bucket.rating} star${bucket.rating > 1 ? 's' : ''}`,
+    fullLabel: t('stats.starsLabel', { count: bucket.rating }),
     value: bucket.count,
   }))
 
   return (
     <div className="space-y-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <h1 className="em text-3xl">Reading statistics</h1>
+        <h1 className="em text-3xl">{t('stats.title')}</h1>
         <label className="flex items-center gap-2 text-[15px]">
-          <span className="text-muted">Year</span>
+          <span className="text-muted">{t('stats.year')}</span>
           <select
             value={stats.year.year}
             onChange={(event) => setSearch({ year: event.target.value })}
@@ -103,42 +105,42 @@ export function StatsPage() {
 
       {/* Headline: the one hero number of the page. */}
       <section className="rounded-[var(--radius-ui)] border border-line bg-surface p-6 ">
-        <p className="text-[15px] text-muted">Books finished in {stats.year.year}</p>
+        <p className="text-[15px] text-muted">{t('stats.finishedIn', { year: String(stats.year.year) })}</p>
         <p className="text-5xl font-semibold text-ink">{stats.year.booksFinished}</p>
-        <p className="mt-1 text-[15px] text-muted">{stats.year.pagesFinished.toLocaleString('en-GB')} pages in finished books</p>
+        <p className="mt-1 text-[15px] text-muted">{t('stats.pagesFinished', { count: stats.year.pagesFinished })}</p>
       </section>
 
       <div className="grid grid-cols-2 gap-4 md:grid-cols-5">
-        <StatTile label="Books in library" value={stats.totals.books.toLocaleString('en-GB')} to="/" />
-        <StatTile label="Read" value={String(stats.totals.read)} to="/?status=READ" />
-        <StatTile label="Currently reading" value={String(stats.totals.reading)} to="/?status=READING" />
-        <StatTile label="Want to read" value={String(stats.totals.wantToRead)} to="/?status=WANT_TO_READ" />
+        <StatTile label={t('stats.tileBooks')} value={formatNumber(stats.totals.books)} to="/" />
+        <StatTile label={t('stats.tileRead')} value={String(stats.totals.read)} to="/?status=READ" />
+        <StatTile label={t('stats.tileReading')} value={String(stats.totals.reading)} to="/?status=READING" />
+        <StatTile label={t('stats.tileWant')} value={String(stats.totals.wantToRead)} to="/?status=WANT_TO_READ" />
         <StatTile
-          label="Average rating"
-          value={stats.ratings.average === null ? '–' : `${stats.ratings.average.toFixed(1)} ★`}
+          label={t('stats.tileAverage')}
+          value={stats.ratings.average === null ? '–' : `${stats.ratings.average.toLocaleString(locale, { minimumFractionDigits: 1, maximumFractionDigits: 1 })} ★`}
           to="/?sort=rating"
         />
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
-        <ChartCard title="Books finished per month" subtitle={String(stats.year.year)} data={monthly} valueLabel="Books">
-          <ColumnChart data={monthly} unit="books" />
+        <ChartCard title={t('stats.perMonth')} subtitle={String(stats.year.year)} data={monthly} valueLabel={t('stats.books')}>
+          <ColumnChart data={monthly} label={t('stats.perMonth')} formatValue={(count) => t('stats.booksCount', { count })} />
         </ChartCard>
         <ChartCard
-          title="Ratings"
-          subtitle={`${stats.ratings.rated} rated ${stats.ratings.rated === 1 ? 'book' : 'books'}`}
+          title={t('stats.ratings')}
+          subtitle={t('stats.rated', { count: stats.ratings.rated })}
           data={ratings}
           valueLabel="Books"
         >
-          <BarChart data={ratings} unit="books" />
+          <BarChart data={ratings} label={t('stats.ratings')} formatValue={(count) => t('stats.booksCount', { count })} />
         </ChartCard>
       </div>
 
       <div className="grid gap-6 lg:grid-cols-[2fr_1fr]">
         <section className="rounded-[var(--radius-ui)] border border-line bg-surface p-5 ">
-          <h2 className="mb-4 font-semibold text-ink">Currently reading</h2>
+          <h2 className="mb-4 font-semibold text-ink">{t('stats.reading')}</h2>
           {stats.currentlyReading.length === 0 ? (
-            <p className="text-[15px] text-muted">Nothing in progress.</p>
+            <p className="text-[15px] text-muted">{t('stats.nothingReading')}</p>
           ) : (
             <ul className="space-y-4">
               {stats.currentlyReading.map((book) => (
@@ -150,7 +152,7 @@ export function StatsPage() {
                     <Link to={`/books/${book.id}`} className="line-clamp-1 em text-[15px] hover:underline">
                       {book.title}
                     </Link>
-                    <p className="line-clamp-1 text-[13px] text-muted">by {book.author}</p>
+                    <p className="em line-clamp-1 text-[13px] text-muted">{book.author}</p>
                     <ProgressBar pagesRead={book.pagesRead} pageCount={book.pageCount} />
                   </div>
                 </li>
@@ -161,20 +163,20 @@ export function StatsPage() {
 
         <section className="space-y-5 rounded-[var(--radius-ui)] border border-line bg-surface p-5 ">
           <div>
-            <h2 className="mb-2 font-semibold text-ink">On the smart shelf</h2>
+            <h2 className="mb-2 font-semibold text-ink">{t('stats.smartShelf')}</h2>
             <dl className="grid grid-cols-[1fr_auto] gap-y-1 text-[15px] tabular-nums">
-              <dt className="text-muted">On the shelf</dt>
+              <dt className="text-muted">{t('stats.onShelf')}</dt>
               <dd>{stats.totals.onShelf}</dd>
-              <dt className="text-muted">Taken off the shelf</dt>
+              <dt className="text-muted">{t('stats.takenOff')}</dt>
               <dd>{stats.totals.offShelf}</dd>
-              <dt className="text-muted">No shelf slot</dt>
+              <dt className="text-muted">{t('stats.noSlot')}</dt>
               <dd>{stats.totals.unassigned}</dd>
             </dl>
           </div>
           <div>
-            <h2 className="mb-2 font-semibold text-ink">Top tags</h2>
+            <h2 className="mb-2 font-semibold text-ink">{t('stats.topTags')}</h2>
             {stats.topTags.length === 0 ? (
-              <p className="text-[15px] text-muted">No tags yet.</p>
+              <p className="text-[15px] text-muted">{t('stats.noTags')}</p>
             ) : (
               <ul className="flex flex-wrap gap-2">
                 {stats.topTags.map(({ tag, count }) => (
@@ -192,7 +194,7 @@ export function StatsPage() {
             )}
           </div>
           <p className="text-[15px] text-muted">
-            {stats.totals.pagesRead.toLocaleString('en-GB')} pages read in total (including books in progress).
+            {t('stats.pagesTotal', { count: stats.totals.pagesRead })}
           </p>
         </section>
       </div>

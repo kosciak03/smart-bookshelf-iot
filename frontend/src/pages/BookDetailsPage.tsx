@@ -11,23 +11,25 @@ import { BookCover } from '../components/BookCover'
 import { ProgressCard, RatingCard, ShelfCard, StatusControl } from '../components/BookControls'
 import { EmptyState, ErrorMessage, Spinner } from '../components/Feedback'
 import { useBook, useDeleteBook } from '../hooks/useBooks'
-import { formatDate, formatIsbn, STATUS_DOT_CLASSES, STATUS_LABELS } from '../lib/labels'
+import { useI18n } from '../i18n/core'
+import { formatIsbn, STATUS_DOT_CLASSES } from '../lib/labels'
 
 /**
  * Renders the details of one book with reading controls, edit and delete.
  */
 export function BookDetailsPage() {
+  const { t, formatDate } = useI18n()
   const { id = '' } = useParams()
   const navigate = useNavigate()
   const { data: book, error, isPending } = useBook(id)
   const remove = useDeleteBook()
 
-  if (isPending) return <Spinner label="Loading book…" />
+  if (isPending) return <Spinner label={t('bookPage.loading')} />
   if (error instanceof ApiError && (error.status === 404 || error.status === 400)) {
     return (
-      <EmptyState title="Book not found">
+      <EmptyState title={t('bookPage.notFound')}>
         <Link to="/" className="text-ink underline">
-          Back to the library
+          {t('bookPage.backToLibrary')}
         </Link>
       </EmptyState>
     )
@@ -35,16 +37,16 @@ export function BookDetailsPage() {
   if (error || !book) return <ErrorMessage error={error} />
 
   const handleDelete = () => {
-    if (!window.confirm(`Delete “${book.title}” from your library? This cannot be undone.`)) return
+    if (!window.confirm(t('bookPage.confirmDelete', { title: book.title }))) return
     remove.mutate(book.id, { onSuccess: () => navigate('/', { replace: true }) })
   }
 
   const meta = [
     book.publisher,
     book.publishedYear?.toString(),
-    book.pageCount !== null ? `${book.pageCount} pages` : null,
-    book.isbn ? `ISBN ${formatIsbn(book.isbn)}` : null,
-    `Added ${formatDate(book.createdAt)}`,
+    book.pageCount !== null ? t('bookPage.pages', { count: book.pageCount }) : null,
+    book.isbn ? t('bookPage.isbn', { isbn: formatIsbn(book.isbn) }) : null,
+    t('bookPage.added', { date: formatDate(book.createdAt) ?? '' }),
   ].filter((entry): entry is string => Boolean(entry))
 
   return (
@@ -52,7 +54,7 @@ export function BookDetailsPage() {
       <div className="flex flex-wrap items-center justify-between gap-3">
         <Link to="/" className="inline-flex h-10 items-center gap-1 text-muted hover:text-ink">
           <ArrowLeft className="h-4 w-4" aria-hidden="true" />
-          Library
+          {t('bookPage.library')}
         </Link>
         <div className="flex gap-2">
           <Link
@@ -60,7 +62,7 @@ export function BookDetailsPage() {
             className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-3 hover:bg-raised"
           >
             <Pencil className="h-4 w-4" aria-hidden="true" />
-            Edit details
+            {t('bookPage.edit')}
           </Link>
           <button
             type="button"
@@ -69,7 +71,7 @@ export function BookDetailsPage() {
             className="inline-flex h-10 items-center gap-2 rounded-[var(--radius-ui)] border border-line bg-surface px-3 text-danger hover:bg-danger-soft disabled:opacity-60"
           >
             <Trash className="h-4 w-4" aria-hidden="true" />
-            {remove.isPending ? 'Deleting…' : 'Delete'}
+            {remove.isPending ? t('bookPage.deleting') : t('bookPage.delete')}
           </button>
         </div>
       </div>
@@ -83,7 +85,7 @@ export function BookDetailsPage() {
         <header className="area-title min-w-0 space-y-1.5">
           <p className="inline-flex items-center gap-1.5 text-[13px] text-muted">
             <span className={`h-2 w-2 rounded-full ${STATUS_DOT_CLASSES[book.status]}`} aria-hidden="true" />
-            {STATUS_LABELS[book.status]}
+            {t(`status.${book.status}`)}
           </p>
           <h1 className="em text-2xl leading-tight md:text-4xl">{book.title}</h1>
           <p className="em text-muted md:text-lg">{book.author}</p>
@@ -104,16 +106,16 @@ export function BookDetailsPage() {
           </p>
 
           {book.description ? (
-            <section aria-label="Description" className="max-w-2xl space-y-2">
-              <h2 className="text-lg font-bold">About this book</h2>
+            <section aria-label={t('bookPage.about')} className="max-w-2xl space-y-2">
+              <h2 className="text-lg font-bold">{t('bookPage.about')}</h2>
               <p className="whitespace-pre-line text-[17px] leading-relaxed">{book.description}</p>
             </section>
           ) : (
-            <p className="text-muted">No description yet.</p>
+            <p className="text-muted">{t('bookPage.noDescription')}</p>
           )}
 
           {book.tags.length > 0 && (
-            <ul className="flex flex-wrap gap-2" aria-label="Tags">
+            <ul className="flex flex-wrap gap-2" aria-label={t('bookPage.tags')}>
               {book.tags.map((tag) => (
                 <li key={tag}>
                   <Link

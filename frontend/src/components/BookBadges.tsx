@@ -4,7 +4,8 @@
  * line and reading progress bar.
  */
 import type { Book, BookStatus, LocationStatus } from '../api/books'
-import { LOCATION_LABELS, progressPercent, STATUS_DOT_CLASSES, STATUS_LABELS } from '../lib/labels'
+import { useI18n } from '../i18n/core'
+import { progressPercent, STATUS_DOT_CLASSES } from '../lib/labels'
 
 /**
  * Reading-status chip with a coloured dot.
@@ -12,10 +13,11 @@ import { LOCATION_LABELS, progressPercent, STATUS_DOT_CLASSES, STATUS_LABELS } f
  * @param props.status - Reading status.
  */
 export function StatusBadge({ status }: { status: BookStatus }) {
+  const { t } = useI18n()
   return (
     <span className="inline-flex h-6 items-center gap-1.5 rounded-[var(--radius-ui)] border border-line px-2 text-[13px] text-ink">
       <span className={`h-2 w-2 rounded-full ${STATUS_DOT_CLASSES[status]}`} aria-hidden="true" />
-      {STATUS_LABELS[status]}
+      {t(`status.${status}`)}
     </span>
   )
 }
@@ -27,14 +29,15 @@ export function StatusBadge({ status }: { status: BookStatus }) {
  * @param props.blinking - Whether the slot's LED is blinking for "find".
  */
 export function SlotBadge({ slotNumber, blinking = false }: { slotNumber: number; blinking?: boolean }) {
+  const { t } = useI18n()
   return (
     <span
       className={`inline-flex h-6 items-center rounded-[var(--radius-ui)] px-2 text-[13px] font-medium ${
         blinking ? 'bg-locate text-white' : 'bg-accent-soft text-ink'
       }`}
-      title={`Shelf slot ${slotNumber}`}
+      title={t('book.slotTitle', { number: slotNumber })}
     >
-      S{slotNumber}
+      {t('shelf.slotShort', { number: slotNumber })}
     </span>
   )
 }
@@ -52,11 +55,12 @@ const LOCATION_DOTS: Record<LocationStatus, string> = {
  * @param props.book - Book to describe.
  */
 export function LocationBadge({ book }: { book: Pick<Book, 'locationStatus' | 'slot'> }) {
-  const slot = book.slot ? ` · slot ${book.slot.slotNumber}` : ''
+  const { t } = useI18n()
+  const slot = book.slot ? ` · ${t('shelf.slotShort', { number: book.slot.slotNumber })}` : ''
   return (
     <span className="inline-flex items-center gap-1.5 text-[13px] text-muted">
       <span className={`h-2 w-2 rounded-full ${LOCATION_DOTS[book.locationStatus]}`} aria-hidden="true" />
-      {LOCATION_LABELS[book.locationStatus]}
+      {t(`location.${book.locationStatus}`)}
       {slot}
     </span>
   )
@@ -78,8 +82,9 @@ export function ProgressBar({
   pageCount: number | null
   size?: 'sm' | 'md'
 }) {
+  const { t } = useI18n()
   const percent = progressPercent(pagesRead, pageCount)
-  if (percent === null) return <p className="text-[13px] text-muted">{pagesRead} pages read</p>
+  if (percent === null) return <p className="text-[13px] text-muted">{t('book.pagesRead', { count: pagesRead })}</p>
   const height = size === 'sm' ? 'h-1' : 'h-1.5'
   return (
     <div>
@@ -89,13 +94,11 @@ export function ProgressBar({
         aria-valuemin={0}
         aria-valuemax={100}
         aria-valuenow={percent}
-        aria-label="Reading progress"
+        aria-label={t('book.progressAria')}
       >
         <div className={`${height} rounded-full bg-accent`} style={{ width: `${percent}%` }} />
       </div>
-      <p className="mt-1 text-[13px] text-muted">
-        {pagesRead} / {pageCount} pages · {percent}%
-      </p>
+      <p className="mt-1 text-[13px] text-muted">{t('book.progress', { read: pagesRead, total: pageCount ?? 0, percent })}</p>
     </div>
   )
 }

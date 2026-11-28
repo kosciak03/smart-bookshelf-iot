@@ -168,7 +168,7 @@ describe('StatsPage', () => {
     renderApp('/stats')
 
     await userEvent.hover(await screen.findByRole('button', { name: /^February 2026/ }))
-    expect(screen.getByRole('tooltip')).toHaveTextContent('February 20261 books · 1,312 pages')
+    expect(screen.getByRole('tooltip')).toHaveTextContent('February 20261 book · 1,312 pages')
 
     await userEvent.click(screen.getAllByRole('button', { name: 'Show table' })[0]!)
     expect(screen.getByRole('cell', { name: 'October 2026' })).toBeInTheDocument()

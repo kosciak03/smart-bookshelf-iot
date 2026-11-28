@@ -10,6 +10,7 @@
 import { Html5Qrcode, Html5QrcodeSupportedFormats, type Html5QrcodeFullConfig } from 'html5-qrcode'
 import { Camera, ImageUp, X } from 'lucide-react'
 import { useEffect, useRef, useState, type ChangeEvent } from 'react'
+import { useI18n, type MessageKey } from '../i18n/core'
 import { isbnFromBarcode } from '../lib/isbn'
 
 /** DOM id of the element the scanner renders the camera preview into. */
@@ -23,7 +24,7 @@ const SCANNER_CONFIG: Html5QrcodeFullConfig = {
 }
 
 /** Message shown when a barcode was read but is not an ISBN. */
-const NOT_A_BOOK = 'This barcode is not an ISBN (book barcodes start with 978 or 979).'
+const NOT_A_BOOK: MessageKey = 'scanner.notBook'
 
 /** Props of {@link BarcodeScanner}. */
 export interface BarcodeScannerProps {
@@ -33,16 +34,16 @@ export interface BarcodeScannerProps {
 }
 
 /**
- * Turns a camera start failure into a user-facing message.
+ * Turns a camera start failure into the key of a user-facing message.
  *
  * @param error - Error thrown by `getUserMedia` / the scanner.
  */
-function cameraErrorMessage(error: unknown): string {
+function cameraErrorMessage(error: unknown): MessageKey {
   const text = String(error instanceof Error ? error.name + error.message : error)
-  if (/NotAllowed|Permission/i.test(text)) return 'Camera access was denied. Allow it in the browser or use a photo.'
-  if (/NotFound|no camera|Requested device not found/i.test(text)) return 'No camera found. Use a photo of the barcode instead.'
-  if (!window.isSecureContext) return 'The camera needs a secure connection (https or localhost). Use a photo instead.'
-  return 'The camera could not be started. Use a photo of the barcode instead.'
+  if (/NotAllowed|Permission/i.test(text)) return 'scanner.denied'
+  if (/NotFound|no camera|Requested device not found/i.test(text)) return 'scanner.noCamera'
+  if (!window.isSecureContext) return 'scanner.insecure'
+  return 'scanner.failed'
 }
 
 /**
@@ -52,8 +53,9 @@ function cameraErrorMessage(error: unknown): string {
 export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
   const scannerRef = useRef<Html5Qrcode | null>(null)
   const detectedRef = useRef(false)
-  const [cameraError, setCameraError] = useState<string | null>(null)
-  const [hint, setHint] = useState<string | null>(null)
+  const { t } = useI18n()
+  const [cameraError, setCameraError] = useState<MessageKey | null>(null)
+  const [hint, setHint] = useState<MessageKey | null>(null)
   const [cameraActive, setCameraActive] = useState(false)
 
   useEffect(() => {
@@ -113,19 +115,19 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
       if (isbn === null) setHint(NOT_A_BOOK)
       else onDetected(isbn)
     } catch {
-      setHint('No barcode found in the photo. Take it closer, sharp and well lit.')
+      setHint('scanner.noBarcode')
     }
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label="Scan ISBN barcode">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4" role="dialog" aria-modal="true" aria-label={t('scanner.dialog')}>
       <div className="w-full max-w-md space-y-4 rounded-[var(--radius-ui)] bg-surface p-5">
         <div className="flex items-center justify-between">
           <h2 className="flex items-center gap-2 em text-lg">
             <Camera className="h-5 w-5" aria-hidden="true" />
-            Scan the barcode
+            {t('scanner.title')}
           </h2>
-          <button type="button" onClick={onClose} className="rounded p-1 text-muted hover:bg-raised" aria-label="Close scanner">
+          <button type="button" onClick={onClose} className="rounded p-1 text-muted hover:bg-raised" aria-label={t('scanner.close')}>
             <X className="h-5 w-5" aria-hidden="true" />
           </button>
         </div>
@@ -133,18 +135,18 @@ export function BarcodeScanner({ onDetected, onClose }: BarcodeScannerProps) {
         <div id={SCANNER_ELEMENT_ID} className="min-h-12 overflow-hidden rounded-[var(--radius-ui)] bg-black" />
 
         {cameraActive && !cameraError && (
-          <p className="text-[15px] text-muted">Point the camera at the barcode on the back cover.</p>
+          <p className="text-[15px] text-muted">{t('scanner.point')}</p>
         )}
-        {cameraError && <p className="text-[15px] text-warn">{cameraError}</p>}
+        {cameraError && <p className="text-[15px] text-warn">{t(cameraError)}</p>}
         {hint && (
           <p className="text-[15px] text-danger" role="alert">
-            {hint}
+            {t(hint)}
           </p>
         )}
 
         <label className="flex cursor-pointer items-center justify-center gap-2 rounded-[var(--radius-ui)] border border-line px-4 py-2 text-[15px] hover:bg-raised">
           <ImageUp className="h-4 w-4" aria-hidden="true" />
-          Use a photo of the barcode
+          {t('scanner.photo')}
           <input type="file" accept="image/*" capture="environment" className="sr-only" onChange={(event) => void handleFile(event)} />
         </label>
       </div>

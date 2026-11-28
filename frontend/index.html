@@ -6,13 +6,15 @@
     <meta name="color-scheme" content="light dark" />
     <title>Smart Bookshelf</title>
     <script>
-      // Apply the saved colour theme before the first paint (no light flash in dark mode).
-      // Keep in sync with src/lib/theme.ts.
+      // Apply the saved colour theme and language before the first paint (no light
+      // flash in dark mode). Keep in sync with src/lib/theme.ts and src/i18n/core.tsx.
       (function () {
         try {
           var pref = localStorage.getItem('sb-theme') || 'system';
           var dark = pref === 'dark' || (pref === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
           if (dark) document.documentElement.classList.add('dark');
+          var lang = localStorage.getItem('sb-language');
+          if (lang === 'pl' || lang === 'en') document.documentElement.lang = lang;
         } catch (error) {
           /* storage unavailable: keep the light theme */
         }

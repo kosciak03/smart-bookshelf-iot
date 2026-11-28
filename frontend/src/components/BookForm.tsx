@@ -5,7 +5,7 @@
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { BOOK_STATUSES } from '../api/books'
 import { validateBookForm, type BookFormField, type BookFormValues } from '../lib/book-form'
-import { STATUS_LABELS } from '../lib/labels'
+import { useI18n, type MessageKey } from '../i18n/core'
 
 /** Props of {@link BookForm}. */
 export interface BookFormProps {
@@ -38,8 +38,9 @@ export function BookForm({
   showStatus = false,
   actions,
 }: BookFormProps) {
+  const { t } = useI18n()
   const [values, setValues] = useState(initialValues)
-  const [clientErrors, setClientErrors] = useState<Partial<Record<BookFormField, string>>>({})
+  const [clientErrors, setClientErrors] = useState<Partial<Record<BookFormField, MessageKey>>>({})
 
   const set = (field: BookFormField) => (value: string) => {
     setValues((previous) => ({ ...previous, [field]: value }))
@@ -54,13 +55,14 @@ export function BookForm({
   }
 
   /** Renders a labelled input with its error message. */
-  const field = (name: BookFormField, label: string, options: { required?: boolean; type?: string; placeholder?: string; inputMode?: 'numeric' } = {}) => {
-    const error = clientErrors[name] ?? serverErrors[name]
+  const field = (name: BookFormField, label: MessageKey, options: { required?: boolean; type?: string; placeholder?: string; inputMode?: 'numeric' } = {}) => {
+    const clientError = clientErrors[name]
+    const error = clientError ? t(clientError) : serverErrors[name]
     const id = `book-${name}`
     return (
       <div>
         <label htmlFor={id} className="text-[15px] font-medium text-ink">
-          {label}
+          {t(label)}
           {options.required && <span className="text-danger"> *</span>}
         </label>
         <input
@@ -83,24 +85,24 @@ export function BookForm({
     )
   }
 
-  const descriptionError = clientErrors.description ?? serverErrors.description
+  const descriptionError = clientErrors.description ? t(clientErrors.description) : serverErrors.description
 
   return (
     <form onSubmit={handleSubmit} noValidate className="space-y-4">
       <div className="grid gap-4 sm:grid-cols-2">
-        {field('title', 'Title', { required: true })}
-        {field('author', 'Author(s)', { required: true, placeholder: 'e.g. Stanisław Lem' })}
-        {field('isbn', 'ISBN', { placeholder: '978-…' })}
-        {field('publisher', 'Publisher')}
-        {field('publishedYear', 'Publication year', { inputMode: 'numeric' })}
-        {field('pageCount', 'Number of pages', { inputMode: 'numeric' })}
-        {field('coverUrl', 'Cover image URL', { type: 'url', placeholder: 'https://…' })}
-        {field('tags', 'Tags', { placeholder: 'fantasy, polish, favourites' })}
+        {field('title', 'form.title', { required: true })}
+        {field('author', 'form.author', { required: true, placeholder: t('form.authorPlaceholder') })}
+        {field('isbn', 'form.isbn', { placeholder: '978-…' })}
+        {field('publisher', 'form.publisher')}
+        {field('publishedYear', 'form.publishedYear', { inputMode: 'numeric' })}
+        {field('pageCount', 'form.pageCount', { inputMode: 'numeric' })}
+        {field('coverUrl', 'form.coverUrl', { type: 'url', placeholder: 'https://…' })}
+        {field('tags', 'form.tags', { placeholder: t('form.tagsPlaceholder') })}
       </div>
 
       <div>
         <label htmlFor="book-description" className="text-[15px] font-medium text-ink">
-          Description
+          {t('form.description')}
         </label>
         <textarea
           id="book-description"
@@ -115,7 +117,7 @@ export function BookForm({
       {showStatus && (
         <div>
           <label htmlFor="book-status" className="text-[15px] font-medium text-ink">
-            Shelf
+            {t('form.shelf')}
           </label>
           <select
             id="book-status"
@@ -125,7 +127,7 @@ export function BookForm({
           >
             {BOOK_STATUSES.map((status) => (
               <option key={status} value={status}>
-                {STATUS_LABELS[status]}
+                {t(`status.${status}`)}
               </option>
             ))}
           </select>
@@ -138,7 +140,7 @@ export function BookForm({
           disabled={submitting}
           className="rounded-[var(--radius-ui)] bg-accent px-5 py-2 text-[15px] font-medium text-on-accent hover:bg-accent-hover disabled:opacity-60"
         >
-          {submitting ? 'Saving…' : submitLabel}
+          {submitting ? t('form.saving') : submitLabel}
         </button>
         {actions}
       </div>

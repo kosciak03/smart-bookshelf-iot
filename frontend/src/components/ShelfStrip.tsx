@@ -9,27 +9,30 @@
 import { Link } from 'react-router'
 import type { LedPixel, ShelfSlot, ShelfState } from '../api/shelf'
 import { locateSecondsLeft, useLocateSlot, useNow, useShelf, useStopLocate } from '../hooks/useShelf'
+import { useI18n, type I18n } from '../i18n/core'
 import { BookCover } from './BookCover'
+import { errorMessage } from './Feedback'
 
 /**
  * Text describing a slot's state.
  *
  * @param slot - Slot.
  * @param secondsLeft - Countdown of a LOCATE light, if blinking.
+ * @param t - Translation function.
  */
-export function slotStateText(slot: ShelfSlot, secondsLeft: number | null): string {
+export function slotStateText(slot: ShelfSlot, secondsLeft: number | null, t: I18n['t']): string {
   switch (slot.highlight) {
     case 'LOCATE':
-      return secondsLeft === null ? 'Blinking' : `Blinking · ${secondsLeft} s`
+      return secondsLeft === null ? t('shelf.stateBlinkingShort') : t('shelf.stateBlinking', { seconds: secondsLeft })
     case 'PUT_BACK':
-      return 'Put the book here'
+      return t('shelf.statePutBack')
     case 'MISPLACED':
-      return 'Wrong book here'
+      return t('shelf.stateWrong')
     case 'CONFIRMED':
-      return 'Placed correctly'
+      return t('shelf.stateConfirmed')
     default:
-      if (slot.isOccupied) return slot.book ? 'On the shelf' : 'Something is here'
-      return slot.book ? 'Taken off the shelf' : 'Free slot'
+      if (slot.isOccupied) return slot.book ? t('shelf.stateOnShelf') : t('shelf.stateSomething')
+      return slot.book ? t('shelf.stateTaken') : t('shelf.free')
   }
 }
 
@@ -78,13 +81,15 @@ interface ShelfStripViewProps {
   shelf: ShelfState
   now: number
   onToggle: (slot: ShelfSlot) => void
-  error: Error | null
+  error: unknown
 }
 
 /**
  * Presentational part of {@link ShelfStrip}.
  */
 function ShelfStripView({ shelf, now, onToggle, error }: ShelfStripViewProps) {
+  const i18n = useI18n()
+  const { t } = i18n
   const slots = [...shelf.slots].sort((a, b) => a.slotNumber - b.slotNumber)
   const occupied = slots.filter((slot) => slot.isOccupied).length
   const blinking = slots.filter((slot) => slot.highlight === 'LOCATE')
@@ -92,18 +97,18 @@ function ShelfStripView({ shelf, now, onToggle, error }: ShelfStripViewProps) {
   const columns = `0.5rem repeat(${slots.length}, minmax(0, 1fr) 0.5rem)`
 
   return (
-    <section aria-label="Shelf 1 – live" className="space-y-3 rounded-[var(--radius-ui)] border border-line bg-surface p-3 sm:p-4">
+    <section aria-label={t('shelf.region')} className="space-y-3 rounded-[var(--radius-ui)] border border-line bg-surface p-3 sm:p-4">
       <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1">
         <div className="flex items-baseline gap-2.5">
-          <h2 className="em text-lg">Shelf 1</h2>
+          <h2 className="em text-lg">{t('shelf.title')}</h2>
           <span className="text-[13px] text-muted">
-            {shelf.device.online ? 'online' : 'offline'} · {occupied}/{slots.length} occupied
+            {shelf.device.online ? t('shelf.online') : t('shelf.offline')} · {t('shelf.occupied', { occupied, total: slots.length })}
           </span>
         </div>
-        <ul className="hidden gap-3.5 text-[13px] text-muted sm:flex" aria-label="LED colours">
-          <li className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-full bg-locate" aria-hidden="true" />Find</li>
-          <li className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-full bg-putback" aria-hidden="true" />Put back here</li>
-          <li className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-full bg-misplaced" aria-hidden="true" />Wrong slot</li>
+        <ul className="hidden gap-3.5 text-[13px] text-muted sm:flex" aria-label={t('shelf.legend')}>
+          <li className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-full bg-locate" aria-hidden="true" />{t('shelf.legendFind')}</li>
+          <li className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-full bg-putback" aria-hidden="true" />{t('shelf.legendPutBack')}</li>
+          <li className="flex items-center gap-1.5"><span className="h-1 w-2.5 rounded-full bg-misplaced" aria-hidden="true" />{t('shelf.legendWrong')}</li>
         </ul>
       </div>
 
@@ -123,10 +128,10 @@ function ShelfStripView({ shelf, now, onToggle, error }: ShelfStripViewProps) {
               aria-pressed={isLocate}
               aria-label={
                 isLocate
-                  ? `Slot ${slot.slotNumber} is blinking – turn off`
-                  : `Make slot ${slot.slotNumber} blink${slot.book ? ` (${slot.book.title})` : ' (free slot)'}`
+                  ? t('shelf.blinkingAria', { number: slot.slotNumber })
+                  : t('shelf.blinkAria', { number: slot.slotNumber, title: slot.book?.title ?? t('shelf.free') })
               }
-              title={slot.book?.title ?? 'Free slot'}
+              title={slot.book?.title ?? t('shelf.free')}
               className={`flex min-h-11 min-w-0 items-center justify-center gap-2.5 rounded-[var(--radius-ui)] border-2 p-1.5 text-left transition-colors md:justify-start md:p-2 ${border} ${
                 isLocate ? 'bg-locate-soft text-locate-ink' : slot.isOccupied ? 'bg-raised hover:bg-accent-soft' : 'hover:bg-raised'
               }`}
@@ -141,11 +146,11 @@ function ShelfStripView({ shelf, now, onToggle, error }: ShelfStripViewProps) {
               </span>
               <span className="flex min-w-0 flex-col">
                 <span className="text-[12px] font-medium tracking-wide text-muted md:text-[11px]">
-                  <span className="md:hidden">S{slot.slotNumber}</span>
-                  <span className="hidden md:inline">SLOT {String(slot.slotNumber).padStart(2, '0')}</span>
+                  <span className="md:hidden">{t('shelf.slotShort', { number: slot.slotNumber })}</span>
+                  <span className="hidden md:inline">{t('shelf.slotCode', { number: String(slot.slotNumber).padStart(2, '0') })}</span>
                 </span>
-                <span className="em hidden truncate text-[14px] md:block">{slot.book?.title ?? 'Free slot'}</span>
-                <span className={`hidden truncate text-[13px] md:block ${isLocate ? 'font-bold' : 'text-muted'}`}>{slotStateText(slot, secondsLeft)}</span>
+                <span className="em hidden truncate text-[14px] md:block">{slot.book?.title ?? t('shelf.free')}</span>
+                <span className={`hidden truncate text-[13px] md:block ${isLocate ? 'font-bold' : 'text-muted'}`}>{slotStateText(slot, secondsLeft, t)}</span>
               </span>
             </button>
           )
@@ -157,14 +162,18 @@ function ShelfStripView({ shelf, now, onToggle, error }: ShelfStripViewProps) {
           <>
             <span className="h-2 w-2 rounded-full bg-locate animate-led-blink" aria-hidden="true" />
             <span className="min-w-0 flex-1 truncate">
-              Blinking:{' '}
-              {blinking
-                .map((slot) => `S${slot.slotNumber}${slot.book ? ` ${slot.book.title}` : ''} · ${locateSecondsLeft(slot, now) ?? 0} s`)
-                .join(', ')}
+              {t('shelf.blinkingList', {
+                list: blinking
+                  .map(
+                    (slot) =>
+                      `${t('shelf.slotShort', { number: slot.slotNumber })}${slot.book ? ` ${slot.book.title}` : ''} · ${locateSecondsLeft(slot, now) ?? 0} s`,
+                  )
+                  .join(', '),
+              })}
             </span>
             {blinking.length === 1 && blinking[0]?.book && (
               <Link to={`/books/${blinking[0].book.id}`} className="text-ink underline underline-offset-2">
-                Open book
+                {t('shelf.openBook')}
               </Link>
             )}
             <button
@@ -172,19 +181,19 @@ function ShelfStripView({ shelf, now, onToggle, error }: ShelfStripViewProps) {
               onClick={() => blinking.forEach((slot) => onToggle(slot))}
               className="h-9 rounded-[var(--radius-ui)] border border-line px-3 hover:bg-raised"
             >
-              Turn off
+              {t('shelf.turnOff')}
             </button>
           </>
         ) : (
-          <span className="text-muted">Click a slot to make its LED blink. It turns off by itself after a few seconds or when the book is taken off.</span>
+          <span className="text-muted">{t('shelf.hint')}</span>
         )}
       </div>
       {!shelf.device.online && (
-        <p className="text-[13px] text-warn">The shelf is offline – the LEDs will update when it reconnects.</p>
+        <p className="text-[13px] text-warn">{t('shelf.offlineNote')}</p>
       )}
-      {error && (
+      {error != null && (
         <p className="text-[13px] text-danger" role="alert">
-          {error.message}
+          {errorMessage(error, i18n)}
         </p>
       )}
     </section>

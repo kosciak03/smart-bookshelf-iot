@@ -1,9 +1,10 @@
 /**
  * @packageDocumentation
- * Root component: data cache provider and router.
+ * Root component: translations, data cache provider and router.
  */
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { createBrowserRouter, RouterProvider } from 'react-router'
+import { I18nProvider } from './i18n/core'
 import { routes } from './router'
 
 /** Shared query cache (data is considered fresh for 30 s). */
@@ -21,8 +22,10 @@ const router = createBrowserRouter(routes)
  */
 export default function App() {
   return (
-    <QueryClientProvider client={queryClient}>
-      <RouterProvider router={router} />
-    </QueryClientProvider>
+    <I18nProvider>
+      <QueryClientProvider client={queryClient}>
+        <RouterProvider router={router} />
+      </QueryClientProvider>
+    </I18nProvider>
   )
 }

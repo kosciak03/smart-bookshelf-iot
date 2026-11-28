@@ -9,6 +9,7 @@
  * focus; every chart can be switched to a table view.
  */
 import { useState, type ReactNode } from 'react'
+import { useI18n } from '../i18n/core'
 
 /** A single value of a chart. */
 export interface ChartDatum {
@@ -59,6 +60,7 @@ export function ChartCard({
   valueLabel: string
   children: ReactNode
 }) {
+  const { t } = useI18n()
   const [asTable, setAsTable] = useState(false)
   return (
     <section className="rounded-[var(--radius-ui)] border border-line bg-surface p-5 ">
@@ -68,7 +70,7 @@ export function ChartCard({
           {subtitle && <p className="text-[15px] text-muted">{subtitle}</p>}
         </div>
         <button type="button" onClick={() => setAsTable(!asTable)} className="shrink-0 text-[13px] text-ink hover:underline">
-          {asTable ? 'Show chart' : 'Show table'}
+          {asTable ? t('charts.showChart') : t('charts.showTable')}
         </button>
       </div>
       {asTable ? (
@@ -105,9 +107,18 @@ const PLOT_HEIGHT = 160
  * Vertical column chart with a shared baseline and y-axis gridlines.
  *
  * @param props.data - One column per datum, in order.
- * @param props.unit - Unit for the accessible labels, e.g. `books`.
+ * @param props.label - Accessible name of the chart.
+ * @param props.formatValue - Formats a value with its unit (e.g. `3 books`).
  */
-export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }) {
+export function ColumnChart({
+  data,
+  label,
+  formatValue,
+}: {
+  data: ChartDatum[]
+  label: string
+  formatValue: (value: number) => string
+}) {
   const [active, setActive] = useState<number | null>(null)
   const ticks = niceTicks(Math.max(...data.map((datum) => datum.value), 0))
   const top = ticks[ticks.length - 1] ?? 1
@@ -130,13 +141,13 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
             <div key={tick} className="absolute inset-x-0 border-t border-line" style={{ bottom: `${(tick / top) * 100}%` }} aria-hidden="true" />
           ))}
 
-          <ul className="absolute inset-0 flex items-end" aria-label={`Chart of ${unit}`}>
+          <ul className="absolute inset-0 flex items-end" aria-label={label}>
             {data.map((datum, index) => (
               <li key={datum.fullLabel} className="relative flex h-full flex-1 items-end justify-center">
                 <button
                   type="button"
                   className="flex h-full w-full items-end justify-center outline-none focus-visible:bg-raised"
-                  aria-label={`${datum.fullLabel}: ${datum.value} ${unit}${datum.detail ? `, ${datum.detail}` : ''}`}
+                  aria-label={`${datum.fullLabel}: ${formatValue(datum.value)}${datum.detail ? `, ${datum.detail}` : ''}`}
                   onMouseEnter={() => setActive(index)}
                   onMouseLeave={() => setActive(null)}
                   onFocus={() => setActive(index)}
@@ -153,7 +164,7 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
                   <div className="pointer-events-none absolute bottom-full z-10 mb-1 whitespace-nowrap rounded-[var(--radius-ui)] bg-accent px-2 py-1 text-[13px] text-on-accent shadow" role="tooltip">
                     <div className="font-medium">{datum.fullLabel}</div>
                     <div>
-                      {datum.value} {unit}
+                      {formatValue(datum.value)}
                       {datum.detail && ` · ${datum.detail}`}
                     </div>
                   </div>
@@ -180,14 +191,23 @@ export function ColumnChart({ data, unit }: { data: ChartDatum[]; unit: string }
  * Horizontal bar chart with the value printed at each bar's tip.
  *
  * @param props.data - One bar per datum, top to bottom.
- * @param props.unit - Unit for the accessible labels.
+ * @param props.label - Accessible name of the chart.
+ * @param props.formatValue - Formats a value with its unit (screen readers, tooltips).
  */
-export function BarChart({ data, unit }: { data: ChartDatum[]; unit: string }) {
+export function BarChart({
+  data,
+  label,
+  formatValue,
+}: {
+  data: ChartDatum[]
+  label: string
+  formatValue: (value: number) => string
+}) {
   const max = Math.max(...data.map((datum) => datum.value), 1)
   return (
-    <ul className="space-y-2" aria-label={`Chart of ${unit}`}>
+    <ul className="space-y-2" aria-label={label}>
       {data.map((datum) => (
-        <li key={datum.fullLabel} className="flex items-center gap-3 text-[15px]" title={`${datum.fullLabel}: ${datum.value} ${unit}`}>
+        <li key={datum.fullLabel} className="flex items-center gap-3 text-[15px]" title={`${datum.fullLabel}: ${formatValue(datum.value)}`}>
           <span className="w-16 shrink-0 text-muted">{datum.label}</span>
           <span className="flex flex-1 items-center gap-2">
             {datum.value > 0 && (
@@ -195,7 +215,7 @@ export function BarChart({ data, unit }: { data: ChartDatum[]; unit: string }) {
             )}
             <span className="tabular-nums text-ink">
               {datum.value}
-              <span className="sr-only"> {unit}</span>
+              <span className="sr-only"> ({formatValue(datum.value)})</span>
             </span>
           </span>
         </li>
