@@ -13,6 +13,11 @@ build/
 docs/doxygen/html/
 docs/doxygen/latex/
 
+# Local working notes kept outside the repository
+AGENTS.md
+docs/hardware/
+docs/references.bib
+
 # KiCad: backups, caches, local view settings, locks, recovery files
 hardware/**/*-backups/
 hardware/**/fp-info-cache
@@ -21,8 +26,11 @@ hardware/**/*.lck
 hardware/**/_autosave-*
 hardware/**/*.recovered.*
 hardware/**/*.rar
-# Outdated assembly plot (regenerate from the current board if needed)
+# Generated KiCad outputs (regenerate from the project when needed)
 hardware/**/plots/
+hardware/**/pcbway_production/
+hardware/**/*.rpt
+hardware/**/board2pdf.config.ini
 # Empty leftover project
 hardware/**/Polka_na_ksiazki_pcb/
 
